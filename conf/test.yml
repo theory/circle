@@ -1,0 +1,6 @@
+---
+name: PostgreSQL Experts’ PGVersionCompare (TEST)
+Model::DBI:
+  dsn: dbi:Pg:dbname=circle_test
+  user: postgres
+  pass: ''
