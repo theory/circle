@@ -24,18 +24,115 @@ The App::Circle IRC bot.
 =head1 Options
 
   -c --config FILE         YAML configuration file.
+  -n --nick NICK           Nickname to use. Multiples allowed. Default: circle.
+  -j --join CHANNEL        Channel to join. Multiples allowed. Required.
   -h --host HOST           IRC server host name. Default: localhost.
   -p --port PORT           IRC server port. Default: 6667.
   -U --username USERNAME   Username to connect as. Optional.
   -P --password PASSWORD   IRC server password. Optional.
-  -j --join CHANNEL        Channel to join. Multiples allowed. Required.
-  -n --nick NICK           Nickname to use. Multiples allowed. Default: circle.
   -e --encoding ENCODING   Assumed message character encoding. Default: UTF-8.
      --ssl                 Connect via SSL. Optional.
   -V --verbose             Incremental verbose mode.
   -H --help                Print a usage statement and exit.
   -M --man                 Print the complete documentation and exit.
   -v --version             Print the version number and exit.
+
+=head2 Configuration File
+
+The configuration file specified via C<--config> is in YAML format. Here's a simple
+example:
+
+  ---
+  bot:
+    host: example.com
+    port: 6666
+    join: postgresql
+    nick: fred
+    username: bobby
+    password: ybbob
+    encoding: big-5
+    ssl: 1
+    verbose: 2
+
+These keys may be used instead of command-line options. However, command-line
+options override any values found in the configuration file. Here are the
+supported top-level keys:
+
+=over
+
+=item C<nick>
+
+  nick: fred
+
+  # - or -
+  nick:
+    - lucy
+    - dezi
+    - alice
+
+Nickname to use on the IRC server. May be specified as a single value or as a
+list. In the case of a list, the first value will be preferred, and the other
+values used as alternates. Equivalent to C<--nick>
+
+=item C<join>
+
+  join: #perl
+
+  # - or -
+  join:
+    - #perl
+    - #postgresql
+    - #dbi
+
+One or more IRC channels to join. May be specified as a scalar value for just
+one channel, or as a list for multple channels. Equivalent to C<--join>
+
+=item C<host>
+
+  host: irc.freenode.net
+
+The IRC server to connect to. Equivalent of C<--host>.
+
+=item C<port>
+
+  port: 6669
+
+The port to connect to the IRC server. Equivalent of C<--port>.
+
+=item C<username>
+
+  username: fred
+
+Username to use when connecting to the IRC server. Equivalent to C<--username>.
+
+=item C<password>
+
+  password: s3kr3t
+
+Password to use to authenticate to the IRC server. Equivalent to C<--password>.
+
+=item C<ssl>
+
+  ssl: Y
+
+Connect to the server via SSL. Defaults to false. Equivalent to C<--ssl>.
+
+=item C<encoding>
+
+  encoding: Latin-1
+
+IRC has no defined character set for putting high-bit chars into channel.
+Circle assumes UTF-8, but in case your channel thinks differently, the bot can
+be told about different encodings. Equivalent to C<--encoding>.
+
+=item C<verbose>
+
+  verbose: 1
+
+Verbosity level. Useful for debugging. Defaults to 0, but may go up to 3 for
+serious debugging output. Equivalent to C<--verbose>.
+
+=back
 
 =cut
 
@@ -79,7 +176,6 @@ sub _config {
     ) {
         $opts->{$spec->[0]} = $spec->[1] unless defined $opts->{$spec->[0]};
     }
-
 
     # Check required options.
     for my $spec ( [host => 'server'], 'port', [join => 'channels'] ) {
