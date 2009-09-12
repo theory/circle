@@ -1,5 +1,5 @@
 ---
-bot:
+irc:
   host: example.com
   port: 6666
   join: postgresql
@@ -8,4 +8,7 @@ bot:
   password: ybbob
   encoding: big-5
   ssl: 1
-  verbose: 2
+dbi:
+  dsn: dbi:Pg:dbname=circle
+  username: larry
+  password: damian

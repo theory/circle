@@ -7,14 +7,18 @@ use utf8;
 use Bot::BasicBot 0.81;
 use parent 'Bot::BasicBot';
 
+use Class::XSAccessor accessors => {
+    dsn => 'dsn',
+};
+
+
 =head1 Name
 
 App::Cicle::Root - App::Circle IRC Bot
 
 =head1 Usage
 
-  circle --host irc.freenode.net \
-         --channel '#perl'
+  circle --config conf/prod.yml
 
 =head1 Description
 
@@ -22,19 +26,11 @@ The App::Circle IRC bot.
 
 =head1 Options
 
-  -c --config FILE         YAML configuration file.
-  -n --nick NICK           Nickname to use. Multiples allowed. Default: circle.
-  -j --join CHANNEL        Channel to join. Multiples allowed. Required.
-  -h --host HOST           IRC server host name. Default: localhost.
-  -p --port PORT           IRC server port. Default: 6667.
-  -U --username USERNAME   Username to connect as. Optional.
-  -P --password PASSWORD   IRC server password. Optional.
-  -e --encoding ENCODING   Assumed message character encoding. Default: UTF-8.
-     --ssl                 Connect via SSL. Optional.
-  -V --verbose             Incremental verbose mode.
-  -H --help                Print a usage statement and exit.
-  -M --man                 Print the complete documentation and exit.
-  -v --version             Print the version number and exit.
+  -c --config FILE  YAML configuration file. Required.
+  -V --verbose      Incremental verbosity mode.
+  -H --help         Print a usage statement and exit.
+  -M --man          Print the complete documentation and exit.
+  -v --version      Print the version number and exit.
 
 =head2 Configuration File
 
@@ -42,7 +38,7 @@ The configuration file specified via C<--config> is in YAML format. Here's a sim
 example:
 
   ---
-  bot:
+  irc:
     host: example.com
     port: 6666
     join: postgresql
@@ -51,11 +47,17 @@ example:
     password: ybbob
     encoding: big-5
     ssl: 1
-    verbose: 2
+  Model::DBI:
+    dsn: dbi:Pg:dbname=circle
+    username: circle
+    password: elcric
 
-These keys may be used instead of command-line options. However, command-line
-options override any values found in the configuration file. Here are the
-supported top-level keys:
+There are two top-level keys, C<irc> and C<Model::DBI>, and each contains a
+list of its own configuration keys:
+
+=over
+
+=item C<irc>
 
 =over
 
@@ -84,7 +86,7 @@ values used as alternates. Equivalent to C<--nick>
     - #dbi
 
 One or more IRC channels to join. May be specified as a scalar value for just
-one channel, or as a list for multple channels. Equivalent to C<--join>
+one channel, or as a list for multiple channels. Equivalent to C<--join>
 
 =item C<host>
 
@@ -124,12 +126,34 @@ IRC has no defined character set for putting high-bit chars into channel.
 Circle assumes UTF-8, but in case your channel thinks differently, the bot can
 be told about different encodings. Equivalent to C<--encoding>.
 
-=item C<verbose>
+=back
 
-  verbose: 1
+=item C<Model::DBI>
 
-Verbosity level. Useful for debugging. Defaults to 0, but may go up to 3 for
-serious debugging output. Equivalent to C<--verbose>.
+=over
+
+=item C<dsn>
+
+  dsn: dbi:Pg:dbname=circle
+
+DSN to use to connect to the database. Consult the L<DBI|DBI> and
+L<DBD::Pg|DBD::Pg> documentation for complete details. Required.
+
+=item C<username>
+
+  username: circle
+
+The username to use when connecting to the database server. Optional. Defaults
+to the value of the C<$PGUSER> environment variable or to OS username.
+
+=item C<password>
+
+  password: elcric
+
+Password to use when authenticating to the database server. Required if
+C<username> needs a password to authenticate to the server.
+
+=back
 
 =back
 
@@ -138,31 +162,37 @@ serious debugging output. Equivalent to C<--verbose>.
 sub _config {
     my $self = shift;
 
-    my $opts = $self->_getopt();
+    my $opts = $self->_getopt;
+    my $file = $opts->{config} or $self->_pod2usage(
+        '-message' => 'Missing required --config option'
+    );
 
-    if (my $file = delete $opts->{config}) {
-        require YAML::Syck;
-        my $config = YAML::Syck::LoadFile($file);
-        if (my $bc = $config->{bot}) {
-            while (my ($k, $v) = each %{ $bc }) {
-                # Perform transformations.
-                given ($k) {
-                    when ('join') { $v = [$v] unless ref $v; $k = 'channels'; }
-                    when ('host') { $k = 'server' }
-                    when ('encoding') { $k = 'charset' }
-                }
+    require YAML::Syck;
+    my $config = YAML::Syck::LoadFile($file);
 
-                # Don't override command-line options.
-                $opts->{$k} = $v unless defined $opts->{$k};
+    # Take care of the Bot configuration.
+    my $irc = $config->{irc} or $self->_pod2usage(
+        '-message' => "Missing required irc configuration in $file"
+    );
+
+    for my $k ( keys %{ $irc } ) {
+        # Perform transformations.
+        given ($k) {
+            when ('join') {
+                $irc->{channels} = ref $irc->{$k}
+                    ?   delete $irc->{$k}
+                    : [ delete $irc->{$k} ];
             }
+            when ('host')     { $irc->{server}  = delete $irc->{$k} }
+            when ('encoding') { $irc->{charset} = delete $irc->{$k} }
         }
     }
 
     # Modify nicks.
-    if (ref $opts->{nick}) {
-        my @nicks = @{ $opts->{nick} };
-        $opts->{nick} = shift @nicks;
-        $opts->{alt_nicks} = \@nicks if @nicks;
+    if (ref $irc->{nick}) {
+        my @nicks = @{ $irc->{nick} };
+        $irc->{nick} = shift @nicks;
+        $irc->{alt_nicks} = \@nicks if @nicks;
     }
 
     # Set default values.
@@ -173,17 +203,29 @@ sub _config {
         [ charset => 'UTF-8'     ],
         [ verbose => 0           ],
     ) {
-        $opts->{$spec->[0]} = $spec->[1] unless defined $opts->{$spec->[0]};
+        $irc->{$spec->[0]} = $spec->[1] unless exists $irc->{ $spec->[0] };
     }
 
     # Check required options.
     for my $spec ( [host => 'server'], 'port', [join => 'channels'] ) {
         my ($opt, $key) = ref $spec ? @{ $spec } : ($spec, $spec);
-        next if $opts->{$key};
-        $self->_pod2usage( '-message' => "Missing required --$opt option" );
+        next if $irc->{$key};
+        $self->_pod2usage(
+            '-message' => "Missing required irc/$opt configuration in $file"
+        );
     }
 
-    return %{ $opts };
+    # Now handle the DBI configuration.
+    my $dbi = $config->{dbi} or $self->_pod2usage(
+        '-message' => "Missing required irc configuration in $file"
+    );
+
+    $self->_pod2usage(
+        '-message' => "Missing required dbi/dsn configuration in $file"
+    ) unless $dbi->{dsn};
+
+    # Return the configuration.
+    return ( %{ $irc }, dbi => $dbi, verbose => $opts->{verbose} || 0 );
 }
 
 sub _getopt {
@@ -193,19 +235,11 @@ sub _getopt {
 
     my %opts;
     Getopt::Long::GetOptions(
-        'config|c=s'        => \$opts{config},
-        'host|h=s'          => \$opts{server},
-        'port|p=s'          => \$opts{port},
-        'join|j=s@'         => \$opts{channels},
-        'nick|n=s@'         => \$opts{nick},
-        'username|user|U=s' => \$opts{username},
-        'password|pass|P=s' => \$opts{password},
-        'encoding|e=s'      => \$opts{charset},
-        'ssl'               => \$opts{ssl},
-        'verbose|V+'        => \$opts{verbose},
-        'help|H'            => \$opts{help},
-        'man|M'             => \$opts{man},
-        'version|v'         => \$opts{version},
+        'config|c=s' => \$opts{config},
+        'verbose|V+' => \$opts{verbose},
+        'help|H'     => \$opts{help},
+        'man|M'      => \$opts{man},
+        'version|v'  => \$opts{version},
     ) or $self->_pod2usage;
 
     # Handle documentation requests.
@@ -225,7 +259,7 @@ sub _getopt {
     return \%opts;
 }
 
-=head3 C<run>
+=head3 C<go>
 
 =cut
 

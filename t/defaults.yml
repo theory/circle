@@ -1,3 +1,5 @@
 ---
-bot:
+irc:
   join: postgresql
+dbi:
+  dsn: dbi:Pg:dbname=circle

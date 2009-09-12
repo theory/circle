@@ -1,6 +1,6 @@
 ---
-name: PostgreSQL Experts’ PGVersionCompare
+name: Circle
 Model::DBI:
   dsn: dbi:Pg:dbname=circle
-  user: postgres
-  pass: ''
+  username: postgres
+  password: ''

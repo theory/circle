@@ -12,4 +12,7 @@ all_pod_files_spelling_ok();
 
 __DATA__
 Lenz's
-
+DSN
+SSL
+UTF
+YAML

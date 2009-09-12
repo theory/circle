@@ -1,5 +1,5 @@
 ---
-bot:
+irc:
   join:
     - perl
     - postgresql
@@ -9,3 +9,5 @@ bot:
     - lucy
     - alice
     - dezi
+dbi:
+  dsn: dbi:Pg:dbname=circle
