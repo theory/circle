@@ -6,7 +6,6 @@ use feature ':5.10';
 use utf8;
 use Bot::BasicBot 0.81;
 use parent 'Bot::BasicBot';
-#use App::Circle;
 
 =head1 Name
 
