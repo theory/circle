@@ -3,4 +3,4 @@
 use strict;
 use warnings;
 use App::Circle::Bot;
-App::Circle::Bot->run;
+App::Circle::Bot->go;

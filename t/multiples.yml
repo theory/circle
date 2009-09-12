@@ -1,0 +1,11 @@
+---
+bot:
+  join:
+    - perl
+    - postgresql
+    - dbi
+  nick:
+    - fred
+    - lucy
+    - alice
+    - dezi

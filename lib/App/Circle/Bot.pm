@@ -23,12 +23,12 @@ The App::Circle IRC bot.
 
 =head1 Options
 
-     --config FILE         YAML configuration file.
+  -c --config FILE         YAML configuration file.
   -h --host HOST           IRC server host name. Default: localhost.
   -p --port PORT           IRC server port. Default: 6667.
   -U --username USERNAME   Username to connect as. Optional.
   -P --password PASSWORD   IRC server password. Optional.
-  -c --channel CHANNEL     Channel to join. Multiples allowed. Required.
+  -j --join CHANNEL        Channel to join. Multiples allowed. Required.
   -n --nick NICK           Nickname to use. Multiples allowed. Default: circle.
   -e --encoding ENCODING   Assumed message character encoding. Default: UTF-8.
      --ssl                 Connect via SSL. Optional.
@@ -41,22 +41,67 @@ The App::Circle IRC bot.
 
 sub _config {
     my $self = shift;
+
+    my $opts = $self->_getopt();
+
+    if (my $file = delete $opts->{config}) {
+        require YAML::Syck;
+        my $config = YAML::Syck::LoadFile($file);
+        if (my $bc = $config->{bot}) {
+            while (my ($k, $v) = each %{ $bc }) {
+                # Perform transformations.
+                given ($k) {
+                    when ('join') { $v = [$v] unless ref $v; $k = 'channels'; }
+                    when ('host') { $k = 'server' }
+                    when ('encoding') { $k = 'charset' }
+                }
+
+                # Don't override command-line options.
+                $opts->{$k} = $v unless defined $opts->{$k};
+            }
+        }
+    }
+
+    # Modify nicks.
+    if (ref $opts->{nick}) {
+        my @nicks = @{ $opts->{nick} };
+        $opts->{nick} = shift @nicks;
+        $opts->{alt_nicks} = \@nicks if @nicks;
+    }
+
+    # Set default values.
+    for my $spec (
+        [ server  => 'localhost' ],
+        [ port    => 6667        ],
+        [ nick    => 'circle'    ],
+        [ charset => 'UTF-8'     ],
+        [ verbose => 0           ],
+    ) {
+        $opts->{$spec->[0]} = $spec->[1] unless defined $opts->{$spec->[0]};
+    }
+
+
+    # Check required options.
+    for my $spec ( [host => 'server'], 'port', [join => 'channels'] ) {
+        my ($opt, $key) = ref $spec ? @{ $spec } : ($spec, $spec);
+        next if $opts->{$key};
+        $self->_pod2usage( '-message' => "Missing required --$opt option" );
+    }
+
+    return %{ $opts };
+}
+
+sub _getopt {
+    my $self = shift;
     require Getopt::Long;
     Getopt::Long::Configure( qw(bundling) );
 
-    my %opts = (
-        server  => 'localhost',
-        port    => 6667,
-        nick    => ['circle'],
-        charset => 'UTF-8',
-        verbose => 0,
-    );
-
+    my %opts;
     Getopt::Long::GetOptions(
-        'config=s'          => \$opts{config},
+        'config|c=s'        => \$opts{config},
         'host|h=s'          => \$opts{server},
         'port|p=s'          => \$opts{port},
-        'channel|c=s@'      => \$opts{channels},
+        'join|j=s@'         => \$opts{channels},
         'nick|n=s@'         => \$opts{nick},
         'username|user|U=s' => \$opts{username},
         'password|pass|P=s' => \$opts{password},
@@ -82,18 +127,6 @@ sub _config {
         exit;
     }
 
-    # Modify options and set defaults as appropriate.
-    my @nicks = @{ $opts{nick} };
-    $opts{nick} = shift @nicks;
-    $opts{alt_nicks} = \@nicks if @nicks;
-
-    # Check required options.
-    for my $spec ( [host => 'server'], 'port', [channel => 'channels'] ) {
-        my ($opt, $key) = ref $spec ? @{ $spec } : ($spec, $spec);
-        next if $opts{$key};
-        $self->_pod2usage( '-message' => "Missing required --$opt option" );
-    }
-
     return \%opts;
 }
 
@@ -101,9 +134,9 @@ sub _config {
 
 =cut
 
-sub run {
+sub go {
     my $class = shift;
-    $class->new( $class->_config )->SUPER::run;
+    $class->new( $class->_config )->run;
 }
 
 =head3 C<dbwrite>

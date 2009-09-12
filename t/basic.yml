@@ -1,0 +1,11 @@
+---
+bot:
+  host: example.com
+  port: 6666
+  join: postgresql
+  nick: fred
+  username: bobby
+  password: ybbob
+  encoding: big-5
+  ssl: 1
+  verbose: 2
