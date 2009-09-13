@@ -4,3 +4,8 @@ Model::DBI:
   dsn: dbi:Pg:dbname=circle_test
   username: postgres
   password: ''
+irc:
+  server: irc.perl.org
+  join:
+    - perl
+    - bricolage

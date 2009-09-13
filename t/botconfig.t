@@ -17,23 +17,9 @@ BEGIN {
 }
 
 can_ok $CLASS, qw(
-    go
-    run
-    new
     _getopt
     _config
     _pod2usage
-    said
-    emoted
-    chanjoin
-    chanquit
-    chanpart
-    _channels_for_nick
-    userquit
-    topic
-    nick_change
-    kicked
-    help
 );
 
 ##############################################################################

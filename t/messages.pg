@@ -1,0 +1,284 @@
+BEGIN;
+SELECT plan( 69 );
+--SELECT * FROM no_plan();
+
+/****************************************************************************/
+-- What does the check_server() function look like?
+SELECT has_function( 'public', 'check_server', ARRAY['citext'] );
+SELECT function_lang_is( 'check_server', 'plpgsql' );
+SELECT function_returns( 'check_server', 'boolean' );
+SELECT volatility_is( 'check_server', 'volatile' );
+
+-- Now give it a try.
+SELECT ok(
+    NOT EXISTS( SELECT name FROM servers where NAME = 'irc.freenode.net' ),
+    'Should not have freenode server'
+);
+
+SELECT is(
+    check_server('irc.freenode.net'),
+    true,
+    'Should be able to check server'
+);
+
+SELECT is( name, 'irc.freenode.net', 'Should now have freenode server' )
+  FROM servers WHERE name = 'irc.freenode.net';
+
+SELECT is(
+    check_server('irc.freenode.net'),
+    true,
+    'Should be able to check server again'
+);
+
+SELECT is( name, 'irc.freenode.net', 'Should still have freenode server' )
+  FROM servers WHERE name = 'irc.freenode.net';
+
+SELECT ok(
+    NOT EXISTS( SELECT name FROM servers where NAME = 'irc.perl.org' ),
+    'Should not have perl server'
+);
+
+SELECT is(
+    check_server('irc.perl.org'),
+    true,
+    'Should be able to check server'
+);
+
+SELECT is( name, 'irc.perl.org', 'Should now have perl server' )
+  FROM servers WHERE name = 'irc.perl.org';
+
+SELECT is(
+    check_server('irc.perl.org'),
+    true,
+    'Should be able to check server again'
+);
+
+SELECT is( name, 'irc.perl.org', 'Should still have perl server' )
+  FROM servers WHERE name = 'irc.perl.org';
+
+/****************************************************************************/
+-- What does the check_references() function look like?
+SELECT has_function( 'public', 'check_references', ARRAY['citext', 'citext', 'citext'] );
+SELECT function_lang_is( 'check_references', 'plpgsql' );
+SELECT function_returns( 'check_references', 'boolean' );
+SELECT volatility_is( 'check_references', 'volatile' );
+
+-- Now give it a try.
+SELECT ok(
+    NOT EXISTS( SELECT name FROM servers where NAME = 'irc.postgresql.org' ),
+    'Should not have postgresql server'
+);
+SELECT ok(
+    NOT EXISTS( SELECT name FROM channels WHERE name = 'postgresql' AND server = 'irc.postgresql.org' ),
+    'Should not have postgresql channel'
+);
+SELECT ok(
+    NOT EXISTS( SELECT name FROM nicks WHERE name = 'theory' AND server = 'irc.postgresql.org' ),
+    'Should not have theory'
+);
+
+SELECT is(
+    check_references( 'irc.postgresql.org', 'postgresql', 'theory' ),
+    true,
+    'Should be able to check references'
+);
+
+SELECT is( name, 'irc.postgresql.org', 'Should now have postgresql server' )
+  FROM servers WHERE name = 'irc.postgresql.org';
+SELECT is( name, 'postgresql', 'Should now have postgresql channel' )
+  FROM channels WHERE name = 'postgresql' AND server = 'irc.postgresql.org';
+SELECT is( name, 'theory', 'Should now have theory' )
+  FROM nicks WHERE name = 'theory' AND server = 'irc.postgresql.org';
+
+SELECT is(
+    check_references( 'irc.postgresql.org', 'postgresql', 'theory' ),
+    true,
+    'Should be able to check references again'
+);
+
+SELECT is( name, 'irc.postgresql.org', 'Should still have postgresql server' )
+  FROM servers WHERE name = 'irc.postgresql.org';
+SELECT is( name, 'postgresql', 'Should still have postgresql channel' )
+  FROM channels WHERE name = 'postgresql' AND server = 'irc.postgresql.org';
+SELECT is( name, 'theory', 'Should still have theory' )
+  FROM nicks WHERE name = 'theory' AND server = 'irc.postgresql.org';
+
+-- Check on someone else.
+SELECT is(
+    check_references( 'irc.postgresql.org', 'postgresql', 'josh' ),
+    true,
+    'Check references with a new nick'
+);
+
+SELECT is( name, 'josh', 'Should now have josh' )
+  FROM nicks WHERE name = 'josh' AND server = 'irc.postgresql.org';
+
+-- Change the channel.
+SELECT is(
+    check_references( 'irc.postgresql.org', 'pgtap', 'josh' ),
+    true,
+    'Check references with a new channel'
+);
+SELECT is( name, 'pgtap', 'Should now have pgtap channel' )
+  FROM channels WHERE name = 'pgtap' AND server = 'irc.postgresql.org';
+
+-- Try another server, eh?
+SELECT ok(
+    NOT EXISTS( SELECT name FROM channels WHERE name = 'perl' AND server = 'irc.perl.org' ),
+    'Should not have perl channel on the perl server'
+);
+SELECT ok(
+    NOT EXISTS( SELECT name FROM nicks WHERE name = 'theory' AND server = 'irc.perl.org' ),
+    'Should not have theory on the perl server'
+);
+
+SELECT is(
+    check_references( 'irc.perl.org', 'pgtap', 'theory' ),
+    true,
+    'Check references with a new server'
+);
+SELECT is( name, 'perl', 'Should now have perl channel on the perl server' )
+  FROM channels WHERE name = 'perl' AND server = 'irc.perl.org';
+SELECT is( name, 'theory', 'Should now have theory on the perl server' )
+  FROM nicks WHERE name = 'theory' AND server = 'irc.perl.org';
+
+-- Go for a non-existent server but the same channel name and user name.
+SELECT ok(
+    NOT EXISTS( SELECT name FROM servers where NAME = 'irc.pgtap.org' ),
+    'Should not have pgtap server'
+);
+
+SELECT is(
+    check_references( 'irc.pgtap.org', 'pgtap', 'theory' ),
+    true,
+    'Check references with a new server'
+);
+
+SELECT is( name, 'irc.pgtap.org', 'Should now have pgtap server' )
+  FROM servers WHERE name = 'irc.pgtap.org';
+SELECT is( name, 'pgtap', 'Should now have pgtap channel on the pgtap server' )
+  FROM channels WHERE name = 'pgtap' AND server = 'irc.pgtap.org';
+SELECT is( name, 'theory', 'Should now have theory on the pgtap server' )
+  FROM nicks WHERE name = 'theory' AND server = 'irc.pgtap.org';
+
+/****************************************************************************/
+-- What does the add_message() function look like?
+SELECT has_function(
+    'public', 'add_message',
+    ARRAY['citext', 'citext', 'citext', 'command', 'text']
+);
+SELECT function_lang_is( 'add_message', 'sql' );
+SELECT function_returns( 'add_message', 'boolean' );
+SELECT volatility_is( 'add_message', 'volatile' );
+
+-- Set up some prepared statements to help with our testing.
+PREPARE fetch_msg AS
+ SELECT server, channel, nick, command, body, tsv, is_spam
+   FROM messages
+  WHERE ID = $1;
+
+PREPARE expect AS
+ VALUES ( $1::citext, $2::citext, $3::citext, $4::command, $5, to_tsvector($5), $6::bool );
+
+PREPARE seen_at_ok AS
+SELECT cmp_ok(
+    seen_at, '<', clock_timestamp(),
+    'Message ' || $1 || ' should have been seen before now'
+)
+  FROM messages
+ WHERE id = $1::bigint
+UNION
+SELECT cmp_ok(
+    seen_at, '>', NOW(),
+    'Message ' || $1 || ' should have been seen since the txn start time'
+)
+  FROM messages
+ WHERE id = $1::bigint;
+
+-- Add a message for a known server, channel, and user.
+ALTER SEQUENCE messages_id_seq RESTART 1;
+SELECT is(
+    add_message('irc.pgtap.org', 'pgtap', 'theory', 'say', 'hello' ),
+    true,
+    'Should be able to add a message'
+);
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(1)',
+    $$EXECUTE expect('irc.pgtap.org', 'pgtap', 'theory', 'say', 'hello', false )$$,
+    'The message should have been inserted'
+);
+EXECUTE seen_at_ok(1);
+
+-- Add another message for a different user.
+SELECT ok(
+    NOT EXISTS( SELECT name FROM nicks WHERE name = 'josh' AND server = 'irc.pgtap.org' ),
+    'Should not have josh on the pgtap server'
+);
+SELECT is(
+    add_message('irc.pgtap.org', 'pgtap', 'josh', 'say', 'sup?' ),
+    true,
+    'Should be able to add a new message'
+);
+
+SELECT is( name, 'josh', 'Should now have josh on the pgtap server' )
+  FROM nicks WHERE name = 'josh' AND server = 'irc.pgtap.org';
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(2)',
+    $$EXECUTE expect('irc.pgtap.org', 'pgtap', 'josh', 'say', 'sup?', false )$$,
+    'The new mssage should have been inserted'
+);
+EXECUTE seen_at_ok(2);
+
+-- Try a different channel and command.
+SELECT ok(
+    NOT EXISTS( SELECT name FROM channels WHERE name = 'perl' AND server = 'irc.pgtap.org' ),
+    'Should not have perl channel on the pgtap server'
+);
+SELECT is(
+    add_message('irc.pgtap.org', 'perl', 'josh', 'emote', 'smiles' ),
+    true,
+    'Should be able to add message with different channel and command'
+);
+
+SELECT is( name, 'perl', 'Should now have perl channel on the pgtap server' )
+  FROM channels WHERE name = 'perl' AND server = 'irc.pgtap.org';
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(3)',
+    $$EXECUTE expect('irc.pgtap.org', 'perl', 'josh', 'emote', 'smiles', false )$$,
+    'The new mssage should have been inserted'
+);
+EXECUTE seen_at_ok(3);
+
+-- Finally, try a brand new server.
+SELECT ok(
+    NOT EXISTS( SELECT name FROM servers where NAME = 'irc.ruby.org' ),
+    'Should not have ruby server'
+);
+
+SELECT is(
+    add_message('irc.ruby.org', 'ruby', 'mroch', 'join', '' ),
+    true,
+    'Should be able to add message on a new server'
+);
+
+SELECT is( name, 'irc.ruby.org', 'Should now have ruby server' )
+  FROM servers WHERE name = 'irc.ruby.org';
+SELECT is( name, 'ruby', 'Should now have ruby channel on ruby server' )
+  FROM channels WHERE name = 'ruby' AND server = 'irc.ruby.org';
+SELECT is( name, 'theory', 'Should now have theory on ruby server' )
+  FROM nicks WHERE name = 'theory' AND server = 'irc.ruby.org';
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(4)',
+    $$EXECUTE expect('irc.ruby.org', 'ruby', 'mroch', 'join', '', false )$$,
+    'The new server message should have been inserted'
+);
+EXECUTE seen_at_ok(4);
+
+/****************************************************************************/
+-- Finish up and go home.
+SELECT * FROM finish();
+ROLLBACK;

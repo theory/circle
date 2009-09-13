@@ -4,13 +4,14 @@ use strict;
 use warnings;
 use feature ':5.10';
 use utf8;
-use Bot::BasicBot 0.81;
+use Bot::BasicBot '0.81';
+use Exception::Class::DBI '1.00';
+use DBI;
 use parent 'Bot::BasicBot';
 
 use Class::XSAccessor accessors => {
-    dsn => 'dsn',
+    _dbi => 'dbi',
 };
-
 
 =head1 Name
 
@@ -228,6 +229,153 @@ sub _config {
     return ( %{ $irc }, dbi => $dbi, verbose => $opts->{verbose} || 0 );
 }
 
+=head3 C<go>
+
+=cut
+
+sub go {
+    my $class = shift;
+    $class->new( $class->_config )->run;
+}
+
+=head3 C<dbh>
+
+=cut
+
+# Set up a callback to delete the AutoCommit attribute when the connection is
+# reused. This keeps connect_cached from breaking transactions.
+
+my $cb = {
+    'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
+};
+
+sub dbh {
+    my $self = shift;
+    DBI->connect_cached( @{ $self->_dbi }{qw(dsn username password)}, {
+        PrintError     => 0,
+        RaiseError     => 0,
+        HandleError    => Exception::Class::DBI->handler,
+        AutoCommit     => 1,
+        pg_enable_utf8 => 1,
+        Callbacks      => $cb
+    });
+}
+
+sub _add_message {
+    my ($self, $command, $channel, $who, $body) = @_;
+    $self->dbh->do(
+        'SELECT add_message(?, ?, ?, ?, ?)',
+        undef,
+        $self->server, $channel, $who, $command, $body,
+    );
+}
+
+=head3 C<said>
+
+=cut
+
+sub _body {
+    my $e = shift;
+    my $addr = $e->{address} || return $e->{body};
+    return undef if $addr eq 'msg';
+    return "$addr: $e->{body}";
+}
+
+sub said {
+    my ($self, $e) = @_;
+    my $body = _body($e) or return;
+    $self->_add_message( say => @{ $e }{qw(channel who)}, $body );
+}
+
+=head3 C<emoted>
+
+=cut
+
+sub emoted {
+    my ($self, $e) = @_;
+    my $body = _body($e) or return;
+    $self->_add_message( emote => @{ $e }{qw(channel who body)} );
+}
+
+=head3 C<chanjoin>
+
+=cut
+
+sub chanjoin {
+    my ($self, $e) = @_;
+    $self->_add_message( join => @{ $e }{qw(channel who)}, '' );
+}
+
+=head3 C<chanpart>
+
+=cut
+
+sub chanpart {
+    my ($self, $e) = @_;
+    $self->_add_message( part => @{ $e }{qw(channel who)}, '' );
+}
+
+sub _channels_for_nick {
+    my ($self, $nick) = @_;
+    grep { $self->{channel_data}{$_}{$nick} } keys %{ $self->{channel_data} };
+}
+
+=head3 C<userquit>
+
+Called when the bot logs out. Will call C<chanpart> for each channel that the
+bot is logged into.
+
+=cut
+
+sub userquit {
+    my ($self, $e) = @_;
+    my $nick = $e->{who};
+    for my $channel ( $self->_channels_for_nick($nick) ) {
+        $self->chanpart({ who => $nick, channel => $channel });
+    }
+}
+
+=head3 C<topic>
+
+=cut
+
+sub topic {
+    my ($self, $e) = @_;
+    $self->_add_message( topic => @{ $e }{qw(channel who topic)} );
+}
+
+=head3 C<nick_change>
+
+=cut
+
+sub nick_change {
+    my ($self, $e) = @_;
+    my ($old, $new) = @{ $e }{qw(from to)};
+    my $body = "$old is now known as $new";
+    for my $channel ($self->_channels_for_nick($new)) {
+        $self->_add_message( nick => $e->{channel}, $old, $body);
+    }
+}
+
+=head3 C<kicked>
+
+=cut
+
+sub kicked {
+    my ($self, $e) = @_;
+    my $body = "$e->{nick} kicked: $e->{reason}";
+    $self->_add_message( kick => @{ $e }{qw(channel who)}, $body );
+}
+
+=head3 C<help>
+
+=cut
+
+sub help {
+    my $self = shift;
+    return q{I'm the Circle logging bot. More info when I know more.};
+}
+
 sub _getopt {
     my $self = shift;
     require Getopt::Long;
@@ -258,154 +406,6 @@ sub _getopt {
 
     return \%opts;
 }
-
-=head3 C<go>
-
-=cut
-
-sub go {
-    my $class = shift;
-    $class->new( $class->_config )->run;
-}
-
-=head3 C<dbwrite>
-
-=cut
-
-sub dbwrite {
-        my ($channel, $who, $line) = @_;
-        # mncharity aka putter has an IRC client that prepends some lines with
-        # a BOM. Remove that:
-        $line =~ s/\A\x{ffef}//;
-        my @sql_args = ($channel, $who, time, $line);
-        print "'", join( "', '", @sql_args), "'\n";
-    }
-
-=head3 C<said>
-
-=cut
-
-sub said {
-        my ($self, $e) = @_;
-        dbwrite($e->{channel}, $e->{who}, $e->{body} . ($e->{address} ? "($e->{address})" : ''));
-        return undef;
-    }
-
-=head3 C<emoted>
-
-=cut
-
-sub emoted {
-        my $self = shift;
-        my $e = shift;
-        dbwrite($e->{channel}, '* ' . $e->{who}, $e->{body});
-        return undef;
-
-    }
-
-=head3 C<chanjoin>
-
-=cut
-
-sub chanjoin {
-        my $self = shift;
-        my $e = shift;
-        dbwrite($e->{channel}, '',  $e->{who} . ' joined ' . $e->{channel});
-        return undef;
-    }
-
-=head3 C<chanquit>
-
-=cut
-
-sub chanquit {
-        my $self = shift;
-        my $e = shift;
-        dbwrite($e->{channel}, '', $e->{who} . ' left ' . $e->{channel});
-        return undef;
-    }
-
-=head3 C<chanpart>
-
-=cut
-
-sub chanpart {
-        my $self = shift;
-        my $e = shift;
-        dbwrite($e->{channel}, '',  $e->{who} . ' left ' . $e->{channel});
-        return undef;
-    }
-
-=head3 C<_channels_for_nick>
-
-=cut
-
-sub _channels_for_nick {
-        my $self = shift;
-        my $nick = shift;
-
-        return grep { $self->{channel_data}{$_}{$nick} } keys( %{ $self->{channel_data} } );
-    }
-
-=head3 C<userquit>
-
-=cut
-
-sub userquit {
-        my $self = shift;
-        my $e = shift;
-        my $nick = $e->{who};
-
-        foreach my $channel ($self->_channels_for_nick($nick)) {
-            $self->chanpart({ who => $nick, channel => $channel });
-        }
-    }
-
-=head3 C<topic>
-
-=cut
-
-sub topic {
-        my $self = shift;
-        my $e = shift;
-        dbwrite($e->{channel}, "", 'Topic for ' . $e->{channel} . ' is now ' . $e->{topic});
-        return undef;
-    }
-
-=head3 C<nick_change>
-
-=cut
-
-sub nick_change {
-        my $self = shift;
-        my($old, $new) = @_;
-
-        foreach my $channel ($self->_channels_for_nick($new)) {
-            dbwrite($channel, "", $old . ' is now known as ' . $new);
-        }
-
-        return undef;
-    }
-
-=head3 C<kicked>
-
-=cut
-
-sub kicked {
-        my $self = shift;
-        my $e = shift;
-        dbwrite($e->{channel}, "", $e->{nick} . ' was kicked by ' . $e->{who} . ': ' . $e->{reason});
-        return undef;
-    }
-
-=head3 C<help>
-
-=cut
-
-sub help {
-        my $self = shift;
-        return "This is a passive irc logging bot. Homepage: http://moritz.faui2k3.org/en/ilbot";
-    }
 
 sub _pod2usage {
     shift;

@@ -1,3 +1,7 @@
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET client_min_messages = warning;
+
 BEGIN;
 
 CREATE TYPE COMMAND AS ENUM (
@@ -23,17 +27,24 @@ CREATE TABLE channels (
     PRIMARY KEY (name, server)
 );
 
+CREATE TABLE nicks (
+    name   CITEXT NOT NULL,
+    server CITEXT NOT NULL REFERENCES servers(name),
+    PRIMARY KEY (name, server)
+);
+
 CREATE TABLE messages (
     id       BIGSERIAL   PRIMARY KEY,
     server   CITEXT      NOT NULL,
     channel  CITEXT      NOT NULL,
-    nick     TEXT        NOT NULL DEFAULT '',
+    nick     CITEXT      NOT NULL,
     command  COMMAND     NOT NULL DEFAULT 'say',
     body     TEXT        NOT NULL DEFAULT '',
     tsv      tsvector    NOT NULL,
-    sent_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    seen_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     is_spam  BOOLEAN     NOT NULL DEFAULT FALSE,
-    FOREIGN KEY (server, channel) references channels(server, name)
+    FOREIGN KEY (channel, server) REFERENCES channels(name, server),
+    FOREIGN KEY (nick, server)    REFERENCES nicks(name, server)
 );
 
 CREATE INDEX message_body_fti ON messages USING gin(tsv);
