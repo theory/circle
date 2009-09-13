@@ -9,6 +9,10 @@ use parent 'Catalyst::Model::DBI';
 use Exception::Class::DBI;
 
 # All other configuration data in the configuration files.
+my $cb = {
+    'connect_cached.reused' => sub { delete $_[4]->{AutoCommit} },
+};
+
 __PACKAGE__->config(
     options => {
         PrintError     => 0,
@@ -16,6 +20,7 @@ __PACKAGE__->config(
         HandleError    => Exception::Class::DBI->handler,
         AutoCommit     => 1,
         pg_enable_utf8 => 1,
+        Callbacks      => $cb,
     },
 );
 
