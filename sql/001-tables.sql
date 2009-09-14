@@ -4,17 +4,19 @@ SET client_min_messages = warning;
 
 BEGIN;
 
-CREATE TYPE COMMAND AS ENUM (
-    'away',
-    'emote',
-    'join',
-    'kick',
-    'nick',
-    'part',
-    'quit',
-    'say',
-    'topic',
-    'who'
+CREATE DOMAIN COMMAND AS TEXT CHECK (
+    VALUE IN (
+        'away',
+        'emote',
+        'join',
+        'kick',
+        'nick',
+        'part',
+        'quit',
+        'say',
+        'topic',
+        'who'
+    )
 );
 
 CREATE TABLE servers (

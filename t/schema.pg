@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 107 );
+SELECT plan( 106 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -41,20 +41,8 @@ SELECT is( value, 2, 'Schema should be up-to-date')
   FROM metadata WHERE label = 'schema_version';
 
 /****************************************************************************/
--- Validate the command enum.
-SELECT has_enum( 'public', 'command'::name );
-SELECT enum_has_labels( 'public', 'command', ARRAY[
-    'away',
-    'emote',
-    'join',
-    'kick',
-    'nick',
-    'part',
-    'quit',
-    'say',
-    'topic',
-    'who'
-] );
+-- Validate the command domain.
+SELECT has_domain( 'public', 'command'::name );
 
 /****************************************************************************/
 -- Validate the servers table.
