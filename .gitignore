@@ -2,6 +2,7 @@ _build
 blib
 App-Circle-*
 MANIFEST
-MANIFESET.bak
+MANIFEST.bak
+MANIFEST.SKIP.*
 META.*
 Build
