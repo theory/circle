@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 106 );
+SELECT plan( 107 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -41,8 +41,52 @@ SELECT is( value, 2, 'Schema should be up-to-date')
   FROM metadata WHERE label = 'schema_version';
 
 /****************************************************************************/
--- Validate the command domain.
-SELECT has_domain( 'public', 'command'::name );
+-- Validate the command enum.
+SELECT has_enum( 'public', 'irc_command'::name );
+SELECT enum_has_labels( 'public', 'irc_command', ARRAY[
+    'admin',
+    'away',
+    'connect',
+    'emote',
+    'error',
+    'info',
+    'invite',
+    'ison',
+    'join',
+    'kick',
+    'kill',
+    'links',
+    'list',
+    'mode',
+    'names',
+    'nick',
+    'notice',
+    'oper',
+    'part',
+    'pass',
+    'ping',
+    'pong',
+    'privmsg',
+    'quit',
+    'rehash',
+    'restart',
+    'say',
+    'server',
+    'squit',
+    'stats',
+    'summon',
+    'time',
+    'topic',
+    'trace',
+    'user',
+    'userhost',
+    'users',
+    'version',
+    'wallops',
+    'who',
+    'whois',
+    'whowas'
+] );
 
 /****************************************************************************/
 -- Validate the servers table.
@@ -137,7 +181,7 @@ SELECT fk_ok(
 );
 
 SELECT has_column( 'messages', 'command' );
-SELECT col_type_is( 'messages', 'command', 'command' );
+SELECT col_type_is( 'messages', 'command', 'irc_command' );
 SELECT col_not_null( 'messages', 'command' );
 SELECT col_has_default( 'messages', 'command' );
 SELECT col_default_is( 'messages', 'command', 'say' );

@@ -43,7 +43,7 @@ CREATE OR REPLACE FUNCTION add_message(
     a_server   CITEXT,
     a_channel  CITEXT,
     a_nick     CITEXT,
-    a_command  COMMAND,
+    a_command  IRC_COMMAND,
     a_body     TEXT
 ) RETURNS BOOLEAN LANGUAGE SQL AS $$
     SELECT check_references($1, $2, $3);

@@ -4,20 +4,53 @@ SET client_min_messages = warning;
 
 BEGIN;
 
-CREATE DOMAIN COMMAND AS TEXT CHECK (
-    VALUE IN (
-        'away',
-        'emote',
-        'join',
-        'kick',
-        'nick',
-        'part',
-        'quit',
-        'say',
-        'topic',
-        'who'
-    )
+CREATE TYPE IRC_COMMAND AS ENUM (
+    'admin',
+    'away',
+    'connect',
+    'emote',
+    'error',
+    'info',
+    'invite',
+    'ison',
+    'join',
+    'kick',
+    'kill',
+    'links',
+    'list',
+    'mode',
+    'names',
+    'nick',
+    'notice',
+    'oper',
+    'part',
+    'pass',
+    'ping',
+    'pong',
+    'privmsg',
+    'quit',
+    'rehash',
+    'restart',
+    'say',      -- pseudo-command, regular message
+    'server',
+    'squit',
+    'stats',
+    'summon',
+    'time',
+    'topic',
+    'trace',
+    'user',
+    'userhost',
+    'users',
+    'version',
+    'wallops',
+    'who',
+    'whois',
+    'whowas'
 );
+
+COMMENT ON TYPE IRC_COMMAND IS
+'Taken from RFC 1459: http://www.faqs.org/rfcs/rfc1459.html';
 
 CREATE TABLE servers (
     name CITEXT PRIMARY KEY
@@ -40,7 +73,7 @@ CREATE TABLE messages (
     server   CITEXT      NOT NULL,
     channel  CITEXT      NOT NULL,
     nick     CITEXT      NOT NULL,
-    command  COMMAND     NOT NULL DEFAULT 'say',
+    command  IRC_COMMAND NOT NULL DEFAULT 'say',
     body     TEXT        NOT NULL DEFAULT '',
     tsv      tsvector    NOT NULL,
     seen_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),

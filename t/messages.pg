@@ -165,7 +165,7 @@ SELECT is( name, 'theory', 'Should now have theory on the pgtap server' )
 -- What does the add_message() function look like?
 SELECT has_function(
     'public', 'add_message',
-    ARRAY['citext', 'citext', 'citext', 'command', 'text']
+    ARRAY['citext', 'citext', 'citext', 'irc_command', 'text']
 );
 SELECT function_lang_is( 'add_message', 'sql' );
 SELECT function_returns( 'add_message', 'boolean' );
@@ -178,7 +178,7 @@ PREPARE fetch_msg AS
   WHERE ID = $1;
 
 PREPARE expect AS
- VALUES ( $1::citext, $2::citext, $3::citext, $4::command, $5, to_tsvector($5), $6::bool );
+ VALUES ( $1::citext, $2::citext, $3::citext, $4::irc_command, $5, to_tsvector($5), $6::bool );
 
 PREPARE seen_at_ok AS
 SELECT cmp_ok(
