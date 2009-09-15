@@ -46,6 +46,7 @@ SELECT has_enum( 'public', 'irc_command'::name );
 SELECT enum_has_labels( 'public', 'irc_command', ARRAY[
     'admin',
     'away',
+    'back',
     'connect',
     'emote',
     'error',

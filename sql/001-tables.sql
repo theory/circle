@@ -7,6 +7,7 @@ BEGIN;
 CREATE TYPE IRC_COMMAND AS ENUM (
     'admin',
     'away',
+    'back',     -- pseudo-command, back from away
     'connect',
     'emote',
     'error',
