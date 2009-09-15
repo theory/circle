@@ -59,13 +59,15 @@ CREATE TABLE servers (
 
 CREATE TABLE channels (
     name   CITEXT NOT NULL,
-    server CITEXT NOT NULL REFERENCES servers(name),
+    server CITEXT NOT NULL REFERENCES servers(name)
+            ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY (name, server)
 );
 
 CREATE TABLE nicks (
     name   CITEXT NOT NULL,
-    server CITEXT NOT NULL REFERENCES servers(name),
+    server CITEXT NOT NULL REFERENCES servers(name)
+            ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY (name, server)
 );
 
@@ -79,8 +81,10 @@ CREATE TABLE messages (
     tsv      tsvector    NOT NULL,
     seen_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
     is_spam  BOOLEAN     NOT NULL DEFAULT FALSE,
-    FOREIGN KEY (channel, server) REFERENCES channels(name, server),
+    FOREIGN KEY (channel, server) REFERENCES channels(name, server)
+            ON DELETE CASCADE ON UPDATE CASCADE,
     FOREIGN KEY (nick, server)    REFERENCES nicks(name, server)
+            ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE INDEX message_body_fti ON messages USING gin(tsv);

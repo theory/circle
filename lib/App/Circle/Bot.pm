@@ -290,8 +290,8 @@ sub _add_message {
 
   $bot->said({ channel => 'perl', who => 'TimToady', body => 'Hi' });
 
-Called when a user sends a regular message to a channel, to log the message to
-the database.
+Called when a user sends a regular message to a channel. Logs the the message
+to the database as a "say" message.
 
 =cut
 
@@ -312,7 +312,8 @@ sub said {
 
   $bot->emoted({ channel => 'perl', who => 'TimToady', body => 'smiles' });
 
-Called when a user emotes on a channel, to log that activity to the database.
+Called when a user emotes on a channel. Logs that activity to the database as
+an "emote" message.
 
 =cut
 
@@ -326,7 +327,8 @@ sub emoted {
 
   $bot->chanjoin({ channel => 'perl', who => 'TimToady' });
 
-Called when a user joins a channel, to log that activity to the database.
+Called when a user joins a channel. Logs it to the database as a "join"
+message.
 
 =cut
 
@@ -339,7 +341,8 @@ sub chanjoin {
 
   $bot->chanpart({ channel => 'perl', who => 'TimToady' });
 
-Called when a user parts a channel, to log that activity to the database.
+Called when a user leaves a channel. Logs it to the database as a "part"
+message.
 
 =cut
 
@@ -350,31 +353,30 @@ sub chanpart {
 
 sub _channels_for_nick {
     my ($self, $nick) = @_;
-    grep { $self->{channel_data}{$_}{$nick} } keys %{ $self->{channel_data} };
+    my $chans = $self->{channel_data};
+    [ grep { $chans->{$_}{$nick} } keys %{ $chans } ];
 }
 
 =head3 C<userquit>
 
   $bot->userquit({ who => 'TimToady' });
 
-Called when the bot logs out, to log that activity to the database.
+Called when a user quits. For each channel that both the user and the bot are
+on, a "part" message will be logged for the user.
 
 =cut
 
 sub userquit {
     my ($self, $e) = @_;
-    my $nick = $e->{who};
-    for my $channel ( $self->_channels_for_nick($nick) ) {
-        $self->chanpart({ who => $nick, channel => $channel });
-    }
+    $self->_add_message( part => $self->_channels_for_nick, $e->{who} );
 }
 
 =head3 C<topic>
 
   $bot->topic({ channel => 'perl', who => 'TimToady', topic => 'Welcome!' });
 
-Called when the topic is set on a channel, to log that activity to the
-database.
+Called when the topic is set on a channel. Logs it to the database as a
+"topic" message.
 
 =cut
 
@@ -387,17 +389,15 @@ sub topic {
 
   $bot->nick_change({ from => 'TomToady', to => 'Larry' });
 
-Called when a user changes her nick, to log that activity to the database.
+Called when a user changes her nick, to log that activity to the database as a
+"nick" message for the old nickname. The new nickname is stored as the body of
+the message.
 
 =cut
 
 sub nick_change {
     my ($self, $e) = @_;
-    my ($old, $new) = @{ $e }{qw(from to)};
-    my $body = "$old is now known as $new";
-    for my $channel ($self->_channels_for_nick($new)) {
-        $self->_add_message( nick => $e->{channel}, $old, $body);
-    }
+    $self->_add_message( nick => $self->_channels_for_nick, @{ $e }{qw(old new)} );
 }
 
 =head3 C<kicked>
@@ -409,7 +409,8 @@ sub nick_change {
       reason  => "Because he's evil, of course!",
   });
 
-Called when a user is kicked from a channel, to log that activity to the database.
+Called when a user is kicked from a channel. Logs it to the database as a
+"kick" message with the body C<"$kicked: $reason">.
 
 =cut
 

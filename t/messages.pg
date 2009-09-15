@@ -313,7 +313,6 @@ SELECT results_eq(
     'Nick should have parted the ponies channel'
 );
 
-
 /****************************************************************************/
 -- Finish up and go home.
 SELECT * FROM finish();
