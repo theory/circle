@@ -32,7 +32,6 @@ can_ok $CLASS, qw(
     nick_change
     kicked
     help
-    _dbi
     _add_message
 );
 
@@ -45,7 +44,7 @@ isa_ok $bot, 'Bot::BasicBot';
 my $dbi = { dsn => 'dbi:Pg:dbname=circle' };
 ok $bot = $CLASS->new( dbi => $dbi ),
     'Pass custom attributes';
-is $bot->_dbi, $dbi, 'Custom attribute should be set';
+is $bot->{dbi}, $dbi, 'Custom attribute should be set';
 
 # Go ahead and load from the test config.
 my $conf = LoadFile catfile qw(conf test.yml);

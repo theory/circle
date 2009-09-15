@@ -20,7 +20,7 @@ Module::Build::DB->new(
     requires           => {
         'aliased'                           => '0.30',
         'Bot::BasicBot'                     => '0.81',
-        'Class::XSAccessor'                 => '1.03',
+#       'Class::XSAccessor'                 => '1.03',
         'perl'                              => 5.010,
         'Catalyst::Action::RenderView'      => '0.11',
         'Catalyst::Devel'                   => '1.2',

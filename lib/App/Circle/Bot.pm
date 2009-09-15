@@ -9,13 +9,14 @@ use Exception::Class::DBI '1.00';
 use DBI;
 use parent 'Bot::BasicBot';
 
-use Class::XSAccessor accessors => {
-    _dbi => 'dbi',
-};
-
 =head1 Name
 
 App::Cicle::Root - App::Circle IRC Bot
+
+=head1 Synopsis
+
+  use App::Circle::Bot;
+  App::Circle::Bot->run;
 
 =head1 Usage
 
@@ -59,6 +60,8 @@ list of its own configuration keys:
 =over
 
 =item C<irc>
+
+Configuration for the IRC server.
 
 =over
 
@@ -130,6 +133,8 @@ be told about different encodings. Equivalent to C<--encoding>.
 =back
 
 =item C<Model::DBI>
+
+Configuration for the database.
 
 =over
 
@@ -231,6 +236,12 @@ sub _config {
 
 =head3 C<go>
 
+  App::Circle::Bot->go;
+
+Runs the bot, processing command-line options in C<@ARGV>, reading the
+configuration file, and then running the bot. Used on the C<circle_bot>
+application.
+
 =cut
 
 sub go {
@@ -239,6 +250,11 @@ sub go {
 }
 
 =head3 C<dbh>
+
+  my $dbh = $bot->dbh;
+
+Returns a database handle connected to the database server. Used by the
+logging methods.
 
 =cut
 
@@ -251,7 +267,7 @@ my $cb = {
 
 sub dbh {
     my $self = shift;
-    DBI->connect_cached( @{ $self->_dbi }{qw(dsn username password)}, {
+    DBI->connect_cached( @{ $self->{dbi} }{qw(dsn username password)}, {
         PrintError     => 0,
         RaiseError     => 0,
         HandleError    => Exception::Class::DBI->handler,
@@ -272,6 +288,11 @@ sub _add_message {
 
 =head3 C<said>
 
+  $bot->said({ channel => 'perl', who => 'TimToady', body => 'Hi' });
+
+Called when a user sends a regular message to a channel, to log the message to
+the database.
+
 =cut
 
 sub _body {
@@ -289,6 +310,10 @@ sub said {
 
 =head3 C<emoted>
 
+  $bot->emoted({ channel => 'perl', who => 'TimToady', body => 'smiles' });
+
+Called when a user emotes on a channel, to log that activity to the database.
+
 =cut
 
 sub emoted {
@@ -299,6 +324,10 @@ sub emoted {
 
 =head3 C<chanjoin>
 
+  $bot->chanjoin({ channel => 'perl', who => 'TimToady' });
+
+Called when a user joins a channel, to log that activity to the database.
+
 =cut
 
 sub chanjoin {
@@ -307,6 +336,10 @@ sub chanjoin {
 }
 
 =head3 C<chanpart>
+
+  $bot->chanpart({ channel => 'perl', who => 'TimToady' });
+
+Called when a user parts a channel, to log that activity to the database.
 
 =cut
 
@@ -322,8 +355,9 @@ sub _channels_for_nick {
 
 =head3 C<userquit>
 
-Called when the bot logs out. Will call C<chanpart> for each channel that the
-bot is logged into.
+  $bot->userquit({ who => 'TimToady' });
+
+Called when the bot logs out, to log that activity to the database.
 
 =cut
 
@@ -337,6 +371,11 @@ sub userquit {
 
 =head3 C<topic>
 
+  $bot->topic({ channel => 'perl', who => 'TimToady', topic => 'Welcome!' });
+
+Called when the topic is set on a channel, to log that activity to the
+database.
+
 =cut
 
 sub topic {
@@ -345,6 +384,10 @@ sub topic {
 }
 
 =head3 C<nick_change>
+
+  $bot->nick_change({ from => 'TomToady', to => 'Larry' });
+
+Called when a user changes her nick, to log that activity to the database.
 
 =cut
 
@@ -359,21 +402,41 @@ sub nick_change {
 
 =head3 C<kicked>
 
+  $bot->kicked({
+      channel => 'perl',
+      who     => 'TimToady',
+      kicked  => 'DrEvil',
+      reason  => "Because he's evil, of course!",
+  });
+
+Called when a user is kicked from a channel, to log that activity to the database.
+
 =cut
 
 sub kicked {
     my ($self, $e) = @_;
-    my $body = "$e->{nick} kicked: $e->{reason}";
+    my $body = "$e->{kicked}: $e->{reason}";
     $self->_add_message( kick => @{ $e }{qw(channel who)}, $body );
 }
 
 =head3 C<help>
 
+  $bot->help({
+      channel => 'perl',
+      who     => 'TimToady',
+      body    => 'help',
+      address => 'circle'
+  });
+
+Called when a user appears to ask the bot for help. This method replies to the
+user, but does no logging (the logging of the help message is already handled
+by C<said>).
+
 =cut
 
 sub help {
-    my $self = shift;
-    return q{I'm the Circle logging bot. More info when I know more.};
+    my ($self, $e) = @_;
+    return qq{$e->{who}: I'm the Circle logging bot. More info when I know more.};
 }
 
 sub _getopt {
