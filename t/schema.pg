@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 109 );
+SELECT plan( 111 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -215,6 +215,9 @@ SELECT index_is_type( 'messages', 'message_body_fti', 'gin' );
 
 SELECT has_index( 'messages', 'message_seen_at_idx', 'seen_at'::name );
 SELECT index_is_type( 'messages', 'message_seen_at_idx', 'btree' );
+
+SELECT has_index( 'messages', 'message_channel_fdx', ARRAY['server', 'channel'] );
+SELECT index_is_type( 'messages', 'message_channel_fdx', 'btree' );
 
 /****************************************************************************/
 -- Finish up and go home.
