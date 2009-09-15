@@ -88,6 +88,7 @@ CREATE TABLE messages (
 );
 
 CREATE INDEX message_body_fti ON messages USING gin(tsv);
+CREATE INDEX message_seen_at_idx ON messages(seen_at);
 
 CREATE TRIGGER message_fti BEFORE INSERT OR UPDATE ON messages
 FOR EACH ROW EXECUTE PROCEDURE

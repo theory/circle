@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 107 );
+SELECT plan( 109 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -212,6 +212,9 @@ SELECT col_default_is( 'messages', 'is_spam', 'false' );
 
 SELECT has_index( 'messages', 'message_body_fti', 'tsv'::name );
 SELECT index_is_type( 'messages', 'message_body_fti', 'gin' );
+
+SELECT has_index( 'messages', 'message_seen_at_idx', 'seen_at'::name );
+SELECT index_is_type( 'messages', 'message_seen_at_idx', 'btree' );
 
 /****************************************************************************/
 -- Finish up and go home.
