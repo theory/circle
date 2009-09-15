@@ -52,4 +52,22 @@ CREATE OR REPLACE FUNCTION add_message(
     RETURNING TRUE;
 $$;
 
+CREATE OR REPLACE FUNCTION add_message(
+    a_server   CITEXT,
+    a_channel  CITEXT[],
+    a_nick     CITEXT,
+    a_command  IRC_COMMAND,
+    a_body     TEXT
+) RETURNS BOOLEAN LANGUAGE SQL AS $$
+    SELECT check_references($1, $2[i], $3)
+      FROM generate_series(array_lower($2, 1), array_upper($2, 1)) s(i);
+
+    INSERT INTO messages ( server, channel, nick, command, body )
+    SELECT $1, $2[i], $3, $4, $5
+      FROM generate_series(array_lower($2, 1), array_upper($2, 1)) s(i)
+     ORDER BY i;
+
+    SELECT TRUE;
+$$;
+
 COMMIT;

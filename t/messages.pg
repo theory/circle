@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 69 );
+SELECT plan( 77 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -277,6 +277,42 @@ SELECT results_eq(
     'The new server message should have been inserted'
 );
 EXECUTE seen_at_ok(4);
+
+/****************************************************************************/
+-- What does the add_message() function with an array of channels look like?
+SELECT has_function(
+    'public', 'add_message',
+    ARRAY['citext', 'citext[]', 'citext', 'irc_command', 'text']
+);
+SELECT function_lang_is( 'add_message', 'sql' );
+SELECT function_returns( 'add_message', 'boolean' );
+SELECT volatility_is( 'add_message', 'volatile' );
+
+-- Use it to insert a few records at once.
+SELECT is(
+    add_message('irc.ruby.org', ARRAY['ruby', 'perl', 'ponies']::citext[], 'mroch', 'part', '' ),
+    true,
+    'Should be able to pass array of channels to add_message()'
+);
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(5)',
+    $$EXECUTE expect('irc.ruby.org', 'ruby', 'mroch', 'part', '', false )$$,
+    'Nick should have parted the ruby channel'
+);
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(6)',
+    $$EXECUTE expect('irc.ruby.org', 'perl', 'mroch', 'part', '', false )$$,
+    'Nick should have parted the perl channel'
+);
+
+SELECT results_eq(
+    'EXECUTE fetch_msg(7)',
+    $$EXECUTE expect('irc.ruby.org', 'ponies', 'mroch', 'part', '', false )$$,
+    'Nick should have parted the ponies channel'
+);
+
 
 /****************************************************************************/
 -- Finish up and go home.
