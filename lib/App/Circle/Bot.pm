@@ -279,10 +279,11 @@ sub dbh {
 
 sub _add_message {
     my ($self, $command, $channel, $who, $body) = @_;
+    my $cast = ref $channel ? '::citext[]' : '';
     $self->dbh->do(
-        'SELECT add_message(?, ?, ?, ?, ?)',
+        "SELECT add_message(?, ?$cast, ?, ?, ?)",
         undef,
-        $self->server, $channel, $who, $command, $body,
+        $self->server, $channel, $who, $command, $body || '',
     );
 }
 
@@ -320,7 +321,7 @@ an "emote" message.
 sub emoted {
     my ($self, $e) = @_;
     my $body = _body($e) or return;
-    $self->_add_message( emote => @{ $e }{qw(channel who body)} );
+    $self->_add_message( emote => @{ $e }{qw(channel who)}, $body );
 }
 
 =head3 C<chanjoin>
@@ -334,7 +335,7 @@ message.
 
 sub chanjoin {
     my ($self, $e) = @_;
-    $self->_add_message( join => @{ $e }{qw(channel who)}, '' );
+    $self->_add_message( join => @{ $e }{qw(channel who)} );
 }
 
 =head3 C<chanpart>
@@ -348,13 +349,13 @@ message.
 
 sub chanpart {
     my ($self, $e) = @_;
-    $self->_add_message( part => @{ $e }{qw(channel who)}, '' );
+    $self->_add_message( part => @{ $e }{qw(channel who)} );
 }
 
 sub _channels_for_nick {
     my ($self, $nick) = @_;
     my $chans = $self->{channel_data};
-    [ grep { $chans->{$_}{$nick} } keys %{ $chans } ];
+    grep { $chans->{$_}{$nick} } keys %{ $chans };
 }
 
 =head3 C<userquit>
@@ -368,7 +369,8 @@ on, a "part" message will be logged for the user.
 
 sub userquit {
     my ($self, $e) = @_;
-    $self->_add_message( part => $self->_channels_for_nick, $e->{who} );
+    my @channels = $self->_channels_for_nick or return;
+    $self->_add_message( part => \@channels, $e->{who} );
 }
 
 =head3 C<topic>
@@ -397,7 +399,8 @@ the message.
 
 sub nick_change {
     my ($self, $e) = @_;
-    $self->_add_message( nick => $self->_channels_for_nick, @{ $e }{qw(old new)} );
+    my @channels = $self->_channels_for_nick or return;
+    $self->_add_message( nick => \@channels, @{ $e }{qw(from to)} );
 }
 
 =head3 C<kicked>
@@ -426,7 +429,7 @@ sub kicked {
       channel => 'perl',
       who     => 'TimToady',
       body    => 'help',
-      address => 'circle'
+      address => 'circle',
   });
 
 Called when a user appears to ask the bot for help. This method replies to the
