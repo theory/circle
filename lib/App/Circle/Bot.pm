@@ -285,6 +285,7 @@ sub _add_message {
         undef,
         $self->server, $channel, $who, $command, $body || '',
     );
+    return;
 }
 
 =head3 C<said>
@@ -306,7 +307,8 @@ sub _body {
 sub said {
     my ($self, $e) = @_;
     my $body = _body($e) or return;
-    $self->_add_message( say => @{ $e }{qw(channel who)}, $body );
+    my $ret = $self->_add_message( say => @{ $e }{qw(channel who)}, $body );
+    return $ret;
 }
 
 =head3 C<emoted>
@@ -489,6 +491,30 @@ sub _pod2usage {
 1;
 
 __END__
+
+=head1 To Do
+
+=over
+
+=item *
+
+Log when circle itself joins a channel?
+
+=item *
+
+Have _add_message() manage a topic callback when it logs in. Better yet, have
+it not log it when it logs in unless it's different than the last one it
+logged.
+
+=item *
+
+Add some command to get circle not to log something.
+
+=item *
+
+Add support for plugins (/op management, factoids, searches, pastes).
+
+=back
 
 =head1 Support
 

@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 56;
+use Test::More tests => 58;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
@@ -66,7 +66,7 @@ isa_ok $dbh->{HandleError}, 'CODE', 'There should be an error handler';
 $dbh->begin_work;
 END { $dbh->rollback }
 $dbh->do('ALTER SEQUENCE messages_id_seq RESTART 1');
-ok $bot->_add_message(qw(say perl theory hello)),
+ok !$bot->_add_message(qw(say perl theory hello)),
     'Add a message';
 
 # Check that it was inserted.
@@ -77,12 +77,11 @@ my $sth = $dbh->prepare(q{
 });
 
 ok my @row = $dbh->selectrow_array($sth, undef, 1), 'Should fetch the new row';
-
 is_deeply \@row, [qw(irc.perl.org perl theory say hello)],
     'Should have expected data';
 
 # Do some logging for multiple channels.
-ok $bot->_add_message(part => [qw(perl pgtap pg)], 'theory'),
+ok !$bot->_add_message(part => [qw(perl pgtap pg)], 'theory'),
     'Add messages for three channels at once';
 
 for my $spec (
@@ -103,6 +102,7 @@ my $mocker = Test::MockModule->new(ref $dbh, no_auto => 1);
 my $tester = sub {
     shift;
     is_deeply \@_, \@expect, $msg;
+    return;
 };
 $mocker->mock( do => $tester);
 
@@ -110,7 +110,7 @@ my $sql = 'SELECT add_message(?, ?, ?, ?, ?)';
 @expect = ($sql, undef, qw(irc.perl.org pgtap josh emote cries));
 $msg = 'Should have proper call to the add_message() database function';
 
-ok $bot->_add_message(qw(emote pgtap josh cries)),
+ok !$bot->_add_message(qw(emote pgtap josh cries)),
     'Add another message';
 
 ##############################################################################
@@ -124,13 +124,13 @@ $mocker->mock(_add_message => $tester );
 # Test said().
 @expect = qw(say perl theory whatever);
 $msg    = 'said() should do proper logging';
-ok $bot->said({ channel => 'perl', who => 'theory', body => 'whatever' }),
+ok !$bot->said({ channel => 'perl', who => 'theory', body => 'whatever' }),
     'Say something';
 
 # Test it with an addres.
 $expect[-1] = 'circle: whatever';
 $msg        = 'said() should manage an address';
-ok $bot->said({ channel => 'perl', who => 'theory', body => 'whatever', address => 'circle' }),
+ok !$bot->said({ channel => 'perl', who => 'theory', body => 'whatever', address => 'circle' }),
     'Address the bot';
 
 # Test it when it's a /msg, there should be no logging.
@@ -141,13 +141,13 @@ ok !$bot->said({ channel => 'perl', who => 'theory', body => 'hi', address => 'm
 # Emote!
 @expect = qw(emote perl theory smiles);
 $msg    = 'emoted() should do proper logging';
-ok $bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles' }),
+ok !$bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles' }),
     'Emote!';
 
 # Emote with an address. Shouldn't happen, but whatever.
 $expect[-1] = 'circle: smiles';
 $msg        = 'emoted() should manage an address';
-ok $bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles', address => 'circle' }),
+ok !$bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles', address => 'circle' }),
     'Emote at the bot';
 
 # Test it when it's a /msg, there should be no logging.
@@ -158,13 +158,13 @@ ok !$bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles', address
 # chanjoin()
 @expect = qw(join perl fred);
 $msg    = 'chanjoin() should do proper logging';
-ok $bot->chanjoin({ channel => 'perl', who => 'fred' }), 'Join';
+ok !$bot->chanjoin({ channel => 'perl', who => 'fred' }), 'Join';
 
 ##############################################################################
 # chanpart()
 @expect = qw(part perl fred);
 $msg    = 'chanpart() should do proper logging';
-ok $bot->chanpart({ channel => 'perl', who => 'fred' }), 'Part';
+ok !$bot->chanpart({ channel => 'perl', who => 'fred' }), 'Part';
 
 ##############################################################################
 # userquit()
@@ -172,7 +172,7 @@ my @channels = qw(perl pgtap parrot);
 $mocker->mock( _channels_for_nick => sub { @channels });
 @expect = ('part', \@channels, 'larry');
 $msg    = 'userquit() should part from all channels';
-ok $bot->userquit({ who => 'larry' }), 'Have larry quit';
+ok !$bot->userquit({ who => 'larry' }), 'Have larry quit';
 
 @channels = ();
 ok !$bot->userquit({ who => 'larry' }),
@@ -180,25 +180,30 @@ ok !$bot->userquit({ who => 'larry' }),
 
 @channels = qw(perl);
 $msg      = 'userquit() should log one channel';
-ok $bot->userquit({ who => 'larry' }), 'Have larry quit again';
+ok !$bot->userquit({ who => 'larry' }), 'Have larry quit again';
 
 ##############################################################################
 # topic()
 @expect = (qw(topic perl theory), 'Piss off!');
 $msg    = 'topic() should do proper logging';
-ok $bot->topic({ channel => 'perl', who => 'theory', topic => 'Piss off!' }),
+ok !$bot->topic({ channel => 'perl', who => 'theory', topic => 'Piss off!' }),
     'Change the topic';
+
+$expect[2] = undef;
+$msg       = 'topic() should work with an undef nick';
+ok !$bot->topic({ channel => 'perl', topic => 'Piss off!' }),
+    'Change the topic without a nick';
 
 ##############################################################################
 # nick_change()
 @channels = qw(perl pgtap parrot);
 @expect   = ('nick', \@channels, 'TimToady', 'Larry');
 $msg      = 'nick_change() should log it';
-ok $bot->nick_change({ from => 'TimToady', to => 'Larry' }), 'Change nicks';
+ok !$bot->nick_change({ from => 'TimToady', to => 'Larry' }), 'Change nicks';
 
 @channels = qw(perl);
 $msg      ='nick_change() should log one change';
-ok $bot->nick_change({ from => 'TimToady', to => 'Larry' }),
+ok !$bot->nick_change({ from => 'TimToady', to => 'Larry' }),
     'Change nick again';
 
 @channels = ();
@@ -209,7 +214,7 @@ ok !$bot->nick_change({ from => 'Fred', to => 'Barney' }),
 # kicked()
 @expect = (qw(kick perl TimToady), q{DrEvil: Because he's evil, of course!});
 $msg    = 'kicked() should kick it live!';
-ok $bot->kicked({
+ok !$bot->kicked({
     channel => 'perl',
     who     => 'TimToady',
     kicked  => 'DrEvil',

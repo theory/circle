@@ -16,3 +16,4 @@ DSN
 SSL
 UTF
 YAML
+plugins
