@@ -5,227 +5,208 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 58;
+use Test::More tests => 48;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
 use YAML::Syck;
-my $CLASS;
 
+my $CLASS;
 BEGIN {
     $CLASS = 'App::Circle::Bot';
     use_ok $CLASS or die;
 }
 
+# Class methods.
 can_ok $CLASS, qw(
     go
     run
-    dbh
     new
-    said
-    emoted
-    chanjoin
-    chanpart
-    _channels_for_nick
-    userquit
+    log
+);
+
+# Accessors.
+can_ok $CLASS, qw(
+    real_name
+    no_run
+    kernel
+    session
+    irc_client
+    nickname
+    server
+    port
+    username
+    password
+    use_ssl
+    allow_flood
+    away_poll
+    reconnect_in
+    channels
+    alt_nicks
+    quit_message
+    ignore_nicks
+    encoding
+    handlers
+    tick_in
+    _poe_name
+    _poe_alias
+    _buffer
+);
+
+# Delegated methods.
+can_ok $CLASS, qw(
+    invite
+    join
+    part
+    nick
+    kick
+    quit
     topic
-    nick_change
-    kicked
-    help
-    _add_message
+    names
+    who
+    whois
+    whowas
+    shutdown
+    notify
 );
 
 ##############################################################################
 ok my $bot = $CLASS->new, 'Instantiate plain bot';
 isa_ok $bot, $CLASS;
-isa_ok $bot, 'Bot::BasicBot';
 
-# Try some custom attributes.
-my $dbi = { dsn => 'dbi:Pg:dbname=circle' };
-ok $bot = $CLASS->new( dbi => $dbi ),
-    'Pass custom attributes';
-is $bot->{dbi}, $dbi, 'Custom attribute should be set';
+# Check default attributes.
+is $bot->reconnect_in, 500,           'timeout should be 500';
+is $bot->quit_message, 'Bye',         'quit_message should be "Bye"';
+is $bot->encoding,     'UTF-8',       'encoding should be UTF-8';
+is $bot->tick_in,      0,             'tick_in should be 0';
+is $bot->away_poll,    60,            'away_poll should be 60';
+ok $bot->_poe_name,                   '_poe_name should be set';
+ok $bot->_poe_alias,                  '_poe_alias should be set';
+is $bot->nickname,    'circlebot',    'nickname should be set';
+is $bot->username,    'circlebot',    'username should be set to nick';
+is $bot->real_name,   'circlebot bot','name should be set to "$nick bot"';
 
-# Go ahead and load from the test config.
-my $conf = LoadFile catfile qw(conf test.yml);
-ok $bot = $CLASS->new( dbi => $conf->{'Model::DBI'} ), 'Create proper bot';
-
-isa_ok my $dbh = $bot->dbh, 'DBI::db', 'Should be able to get a dbh';
-
-# What are we connected to, and how?
-is $dbh->{Username}, 'postgres', 'Should be connected as "postgres"';
-is $dbh->{Name}, 'dbname=circle_test',
-    'Should be connected to "circle_test"';
-ok !$dbh->{PrintError}, 'PrintError should be disabled';
-ok !$dbh->{RaiseError}, 'RaiseError should be disabled';
-ok $dbh->{AutoCommit}, 'AutoCommit should be enabled';
-isa_ok $dbh->{HandleError}, 'CODE', 'There should be an error handler';
+is_deeply $bot->ignore_nicks, [], 'ignore_nicks should be empty';
+is_deeply $bot->alt_nicks,    [], 'alt_nicks should be empty';
+is @{ $bot->handlers }, 1, 'Should have one default handler';
+isa_ok $bot->handlers->[0], 'App::Circle::Bot::Handler::Print';
 
 ##############################################################################
-# Have the bot do some logging, yay!
-$dbh->begin_work;
-END { $dbh->rollback }
-$dbh->do('ALTER SEQUENCE messages_id_seq RESTART 1');
-ok !$bot->_add_message(qw(say perl theory hello)),
-    'Add a message';
+# Test custom attributes.
+ok $bot = $CLASS->new(
+    real_name    => 'Larry Wall',
+    no_run       => 1,
+    nickname     => 'TimToady',
+    server       => 'irc.perl.org',
+    port         => 6669,
+    username     => 'larry',
+    password     => 'yrral',
+    use_ssl      => 1,
+    allow_flood  => 1,
+    away_poll    => 5,
+    reconnect_in => 15,
+    channels     => [qw(perl parrot)],
+    alt_nicks    => [qw(larry wallnut)],
+    quit_message => 'Onion…',
+    ignore_nicks => [qw(Damian chromatic)],
+    encoding     => 'latin-1',
+    handlers     => [qw(Print Log)],
+    tick_in      => 12,
+), 'Construct a custom bot';
 
-# Check that it was inserted.
-my $sth = $dbh->prepare(q{
-    SELECT server, channel, nick, command, body
-      FROM messages
-      WHERE ID = ?
+is $bot->real_name,    'Larry Wall',   'real_name should be set';
+is $bot->no_run,       1,              'no_run should be set';
+is $bot->nickname,     'TimToady',     'nickname should be set';
+is $bot->server,       'irc.perl.org', 'server should be set';
+is $bot->port,         6669,           'port should be set';
+is $bot->username,     'larry',        'username should be set';
+is $bot->password,     'yrral',        'password should be set';
+is $bot->use_ssl,      1,              'use_ssl should be set';
+is $bot->allow_flood,  1,              'allow_flood should be set';
+is $bot->away_poll,    5,              'away_poll should be set';
+is $bot->reconnect_in, 15,             'reconnect_in should be set';
+is $bot->quit_message, 'Onion…',      'quit_message should be set';
+is $bot->encoding,     'latin-1',      'encoding should be set';
+is $bot->tick_in,      12,             'tick_in should be set';
+
+is_deeply $bot->channels,     [qw(perl parrot)],      'channels should be set';
+is_deeply $bot->alt_nicks,    [qw(larry wallnut)],    'alt_nicks should be set';
+is_deeply $bot->ignore_nicks, [qw(Damian chromatic)], 'ignore_nicks should be set';
+
+is @{ $bot->handlers }, 2, 'Should have one two handlers';
+isa_ok $bot->handlers->[0], 'App::Circle::Bot::Handler::Print';
+isa_ok $bot->handlers->[1], 'App::Circle::Bot::Handler::Log';
+
+##############################################################################
+# Test running it.
+my $sess = Test::MockModule->new('POE::Session');
+$sess->mock(create => sub {
+    is_deeply \@_,  [ 'POE::Session', object_states => [
+        $bot => {
+            # POE stuff.
+            _start           => '_start',
+            _stop            => '_stop',
+
+            # Server interactions.
+            irc_001          => '_irc_001',
+            irc_ping         => '_irc_ping',
+            reconnect        => '_reconnect',
+            irc_disconnected => '_irc_disconnected',
+            irc_error        => '_irc_error',
+            irc_socketerror  => '_irc_error',
+            irc_391          => '_irc_391',
+            _get_time        => '_get_time',
+            tick             => '_tick',
+
+            # Conversation
+            irc_msg          => '_irc_msg',
+            irc_public       => '_irc_public',
+            irc_ctcp_action  => '_irc_emote',
+
+            # User actions.
+            irc_join         => '_irc_join',
+            irc_part         => '_irc_part',
+            irc_kick         => '_irc_kick',
+            irc_nick         => '_irc_nick',
+            # irc_mode         => '_irc_mode', XXX Need this?
+            irc_quit         => '_irc_quit',
+
+            # For stuff, to be messed with later.
+            # fork_close       => '_fork_close_state',
+            # fork_error       => '_fork_error_state',
+
+            # Names stuff.
+            irc_353          => '_irc_names',
+            irc_366          => '_irc_names_end',
+
+            # Topics stuff.
+            irc_332          => '_irc_332',
+            irc_333          => '_irc_333',
+            irc_topic        => '_irc_topic',
+
+            # Away stuff.
+            irc_user_away    => '_irc_user_away',
+            irc_user_back    => '_irc_user_back',
+
+            # Mode stuff.
+            irc_user_mode    => '_irc_user_mode',
+            irc_chan_mode    => '_irc_chan_mode',
+
+        }
+    ]], 'Proper args should be passed to POE::Session->create';
 });
 
-ok my @row = $dbh->selectrow_array($sth, undef, 1), 'Should fetch the new row';
-is_deeply \@row, [qw(irc.perl.org perl theory say hello)],
-    'Should have expected data';
-
-# Do some logging for multiple channels.
-ok !$bot->_add_message(part => [qw(perl pgtap pg)], 'theory'),
-    'Add messages for three channels at once';
-
-for my $spec (
-    [ 2, 'perl'  ],
-    [ 3, 'pgtap' ],
-    [ 4, 'pg'    ],
-) {
-    ok my @row = $dbh->selectrow_array($sth, undef, $spec->[0]),
-        qq{Should fetch "part $spec->[1]" row};
-    is_deeply \@row, ['irc.perl.org', $spec->[1], qw(theory part), '' ],
-        qq{Should have expected data for "part $spec->[1]" row};
-}
-
-# Okay, now make sure that _add_message() is calling the add_message()
-# database function, which we test elsewhere.
-my (@expect, $msg);
-my $mocker = Test::MockModule->new(ref $dbh, no_auto => 1);
-my $tester = sub {
+my $kern = Test::MockModule->new('POE::Kernel');
+$kern->mock( post => sub {
     shift;
-    is_deeply \@_, \@expect, $msg;
-    return;
-};
-$mocker->mock( do => $tester);
+    is_deeply \@_, [ $bot->_poe_name => register => 'all' ],
+        'The proper args should be passed to $poe_kernel->post';
+});
+$kern->mock( run => sub { fail '$poe_kernel->run should not be called' });
 
-my $sql = 'SELECT add_message(?, ?, ?, ?, ?)';
-@expect = ($sql, undef, qw(irc.perl.org pgtap josh emote cries));
-$msg = 'Should have proper call to the add_message() database function';
+ok $bot->run, 'Run the bot';
 
-ok !$bot->_add_message(qw(emote pgtap josh cries)),
-    'Add another message';
-
-##############################################################################
-# Okay, _add_message is tested, so we can just mocke it to test all the
-# methods that call it.
-
-$mocker = Test::MockModule->new($CLASS);
-$mocker->mock(_add_message => $tester );
-
-##############################################################################
-# Test said().
-@expect = qw(say perl theory whatever);
-$msg    = 'said() should do proper logging';
-ok !$bot->said({ channel => 'perl', who => 'theory', body => 'whatever' }),
-    'Say something';
-
-# Test it with an addres.
-$expect[-1] = 'circle: whatever';
-$msg        = 'said() should manage an address';
-ok !$bot->said({ channel => 'perl', who => 'theory', body => 'whatever', address => 'circle' }),
-    'Address the bot';
-
-# Test it when it's a /msg, there should be no logging.
-ok !$bot->said({ channel => 'perl', who => 'theory', body => 'hi', address => 'msg' }),
-    '/msg the bot';
-
-##############################################################################
-# Emote!
-@expect = qw(emote perl theory smiles);
-$msg    = 'emoted() should do proper logging';
-ok !$bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles' }),
-    'Emote!';
-
-# Emote with an address. Shouldn't happen, but whatever.
-$expect[-1] = 'circle: smiles';
-$msg        = 'emoted() should manage an address';
-ok !$bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles', address => 'circle' }),
-    'Emote at the bot';
-
-# Test it when it's a /msg, there should be no logging.
-ok !$bot->emoted({ channel => 'perl', who => 'theory', body => 'smiles', address => 'msg' }),
-    'Emote a /msg to the bot';
-
-##############################################################################
-# chanjoin()
-@expect = qw(join perl fred);
-$msg    = 'chanjoin() should do proper logging';
-ok !$bot->chanjoin({ channel => 'perl', who => 'fred' }), 'Join';
-
-##############################################################################
-# chanpart()
-@expect = qw(part perl fred);
-$msg    = 'chanpart() should do proper logging';
-ok !$bot->chanpart({ channel => 'perl', who => 'fred' }), 'Part';
-
-##############################################################################
-# userquit()
-my @channels = qw(perl pgtap parrot);
-$mocker->mock( _channels_for_nick => sub { @channels });
-@expect = ('part', \@channels, 'larry');
-$msg    = 'userquit() should part from all channels';
-ok !$bot->userquit({ who => 'larry' }), 'Have larry quit';
-
-@channels = ();
-ok !$bot->userquit({ who => 'larry' }),
-    'Should have no parts when no common channels';
-
-@channels = qw(perl);
-$msg      = 'userquit() should log one channel';
-ok !$bot->userquit({ who => 'larry' }), 'Have larry quit again';
-
-##############################################################################
-# topic()
-@expect = (qw(topic perl theory), 'Piss off!');
-$msg    = 'topic() should do proper logging';
-ok !$bot->topic({ channel => 'perl', who => 'theory', topic => 'Piss off!' }),
-    'Change the topic';
-
-$expect[2] = undef;
-$msg       = 'topic() should work with an undef nick';
-ok !$bot->topic({ channel => 'perl', topic => 'Piss off!' }),
-    'Change the topic without a nick';
-
-##############################################################################
-# nick_change()
-@channels = qw(perl pgtap parrot);
-@expect   = ('nick', \@channels, 'TimToady', 'Larry');
-$msg      = 'nick_change() should log it';
-ok !$bot->nick_change({ from => 'TimToady', to => 'Larry' }), 'Change nicks';
-
-@channels = qw(perl);
-$msg      ='nick_change() should log one change';
-ok !$bot->nick_change({ from => 'TimToady', to => 'Larry' }),
-    'Change nick again';
-
-@channels = ();
-ok !$bot->nick_change({ from => 'Fred', to => 'Barney' }),
-    'Change nick with no common channels';
-
-##############################################################################
-# kicked()
-@expect = (qw(kick perl TimToady), q{DrEvil: Because he's evil, of course!});
-$msg    = 'kicked() should kick it live!';
-ok !$bot->kicked({
-    channel => 'perl',
-    who     => 'TimToady',
-    kicked  => 'DrEvil',
-    reason  => "Because he's evil, of course!",
-}), 'Kick DrEvil';
-
-##############################################################################
-# help()
-is $bot->help({
-    channel => 'perl',
-    who     => 'TimToady',
-    body    => 'help',
-    address => 'circle',
-}), "TimToady: I'm the Circle logging bot. More info when I know more.", 'Ask for help';
+# Now make it run.
+$bot->no_run(0);
+$kern->mock( run => sub { pass '$poe_kernel->run should now be called' });
+ok $bot->run, 'Run the bot again';

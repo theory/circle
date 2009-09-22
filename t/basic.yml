@@ -2,7 +2,7 @@
 irc:
   host: example.com
   port: 6666
-  join: postgresql
+  join: '#postgresql'
   nick: fred
   username: bobby
   password: ybbob

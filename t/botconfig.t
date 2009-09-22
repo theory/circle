@@ -108,9 +108,6 @@ USAGE: {
     charset => 'UTF-8',
     nick    => 'circle',
     verbose => 0,
-    dbi     => {
-        dsn => 'dbi:Pg:dbname=circle',
-    }
 );
 
 DEFAULTS: {
@@ -118,7 +115,7 @@ DEFAULTS: {
     ok my %config = $CLASS->_config, 'Should get default config';
     is_deeply \%config, {
         %defaults,
-        channels => ['postgresql'],
+        channels => ['#postgresql'],
     }, 'Should have basic config';
 }
 
@@ -131,12 +128,11 @@ CONFIG: {
         port     => 6666,
         username => 'bobby',
         password => 'ybbob',
-        channels => ['postgresql'],
+        channels => ['#postgresql'],
         nick     => 'fred',
         charset  => 'big-5',
         ssl      => 1,
         verbose  => 0,
-        dbi      => { dsn => $defaults{dbi}{dsn}, username => 'larry', password => 'damian' },
     }, 'Should have basic config';
 }
 
@@ -145,7 +141,7 @@ MULTIPLES: {
     ok my %config = $CLASS->_config, 'Should get multiples config';
     is_deeply \%config, {
         %defaults,
-        channels  => [qw(perl postgresql dbi)],
+        channels  => ['#perl', '#postgresql', '#dbi'],
         nick      => 'fred',
         alt_nicks => [qw(lucy alice dezi)],
         verbose   => 2,

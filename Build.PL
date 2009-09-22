@@ -19,8 +19,7 @@ Module::Build::DB->new(
     },
     requires           => {
         'aliased'                           => '0.30',
-        'Bot::BasicBot'                     => '0.81',
-#       'Class::XSAccessor'                 => '1.03',
+        'Class::XSAccessor'                 => '1.03',
         'perl'                              => 5.010,
         'Catalyst::Action::RenderView'      => '0.11',
         'Catalyst::Devel'                   => '1.2',
@@ -32,10 +31,13 @@ Module::Build::DB->new(
         'Catalyst::Runtime'                 => '5.80011',
         'DBI'                               => '1.608',
         'DBD::Pg'                           => '2.15.1',
+        'Encode'                            => '2.12',
+        'Encode::Detect::Detector'          => '1.01',
         'Exception::Class::DBI'             => '1.00',
         'File::Spec'                        => 0,
         'Getopt::Long'                      => '2.34',
         'Pod::Usage'                        => '1.36',
+        'POE::Component::IRC::State'        => '6.12',
         'YAML::Syck'                        => '1.07',
     },
     recommends         => {

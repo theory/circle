@@ -1,5 +1,5 @@
 ---
 irc:
-  join: postgresql
+  join: '#postgresql'
 dbi:
   dsn: dbi:Pg:dbname=circle

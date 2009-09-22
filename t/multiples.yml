@@ -1,9 +1,9 @@
 ---
 irc:
   join:
-    - perl
-    - postgresql
-    - dbi
+    - '#perl'
+    - '#postgresql'
+    - '#dbi'
   nick:
     - fred
     - lucy
