@@ -17,3 +17,8 @@ SSL
 UTF
 YAML
 plugins
+IRC
+GitHub
+DBI
+Username
+bot's

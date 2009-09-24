@@ -588,6 +588,39 @@ sub _reconnect {
     return $self;
 }
 
+=head2 Implementing Event Handlers
+
+Circle event handlers are implemented as subclasses of
+L<App::Circle::Bot::Handler|App::Circle::Bot::Handler>. The implementation is
+a layer over that provided by
+L<POE::Component::IRC::State|POE::Component::IRC::State> so as to make things
+simpler, and to handle decoding the content from IRC, so that you can always
+be sure that the content is in Perl's internal C<utf8> form.
+
+=head2 Event Handlers
+
+The methods supported in event handlers are:
+
+=head3 C<on_connect>
+
+Executed after circle has connected to the IRC server and joined all the
+channels. the parameters passed are:
+
+=over
+
+=item C<nick>
+
+The circle bot's nickname. Will usually be the same as C<nick>, but might be
+one of the C<alt_nicks>.
+
+=item C<body>
+
+The content of the welcome message from the IRC server, if any.
+
+=back
+
+=cut
+
 sub _irc_001 {
     my ( $self, $kernel, $body) = @_[ OBJECT, KERNEL, ARG1 ];
 
