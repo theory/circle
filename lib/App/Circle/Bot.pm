@@ -12,6 +12,7 @@ use POE::Session;
 use POE::Wheel::Run;
 use POE::Filter::Line;
 use Poe::Component::IRC::State;
+use Unicode::Normalize 'NFC';
 use Class::XSAccessor accessors => {
     map { $_ => $_ } qw(
         real_name
@@ -998,9 +999,9 @@ sub _decode {
 
                 if ($@) {
                     # None of those worked, insert "\xHH" for malformed characters.
-                    push @ret, Encode::decode($encoding, $octets, Encode::FB_PERLQQ );
+                    push @ret, NFC Encode::decode($encoding, $octets, Encode::FB_PERLQQ );
                 } else {
-                    push @ret, $utf8;
+                    push @ret, NFC $utf8;
                 }
             }
         }

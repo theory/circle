@@ -38,6 +38,7 @@ Module::Build::DB->new(
         'Getopt::Long'                      => '2.34',
         'Pod::Usage'                        => '1.36',
         'POE::Component::IRC::State'        => '6.12',
+        'Unicode::Normalize'                => '1.03',
         'YAML::Syck'                        => '1.07',
     },
     recommends         => {

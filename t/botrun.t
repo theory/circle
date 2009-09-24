@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 149;
+use Test::More tests => 150;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -588,6 +588,10 @@ BYTES: {
     $res = Encode::decode($bot->encoding, $mixed, Encode::FB_PERLQQ );
     is $bot->_decode($mixed), $res,
         '_decode should gracefully handle unrecognized characters';
+
+    # Make sure that NFC normalization is taking place.
+    is $bot->_decode(Encode::encode('utf-8', "\x{0065}\x{0301}")), "\x{00e9}",
+        'Unicode should be normalized';
 }
 
 ##############################################################################
