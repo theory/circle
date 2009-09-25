@@ -451,15 +451,15 @@ is_deeply $h1->clear, { topic => $msg }, 'Handler should have received message';
 
 ##############################################################################
 # Test _irc_names & irc_names_end.
-$args[ARG1] = '= #perl :larry damian @chromatic +allison @+CanyonMan';
+$args[ARG1] = '= #perl :larry damian @chromatic +allison %@+CanyonMan';
 is $bot->_buffer, undef, 'Buffer should be empty';
 ok App::Circle::Bot::_irc_names(@args), 'Send a names event';
 my $perl = {
-    larry     => { op => 0, voice => 0 },
-    damian    => { op => 0, voice => 0 },
-    chromatic => { op => 1, voice => 0 },
-    allison   => { op => 0, voice => 1 },
-    CanyonMan => { op => 1, voice => 1 },
+    larry     => [],
+    damian    => [],
+    chromatic => ['o'],
+    allison   => ['v'],
+    CanyonMan => [qw(h o v)],
 };
 is_deeply $bot->_buffer, {
     '#perl' => $perl,
@@ -468,9 +468,9 @@ is_deeply $bot->_buffer, {
 # List for another channel.
 $args[ARG1] = '= #pgtap :@+theory selena josh';
 my $pgtap = {
-    theory => { op => 1, voice => 1 },
-    selena => { op => 0, voice => 0 },
-    josh   => { op => 0, voice => 0 },
+    theory => [qw(o v)],
+    selena => [],
+    josh   => [],
 };
 ok App::Circle::Bot::_irc_names(@args), 'Send another names event';
 is_deeply $bot->_buffer, {
@@ -504,10 +504,11 @@ is_deeply $h1->clear, { chan_mode => $msg },
 ##############################################################################
 # Test _irc_user_mode.
 $args[ARG0] = 'bob!~bknight@example.com';
-$args[ARG1] = '#perl';
+$args[ARG1] = 'bob';
 $args[ARG2] = '+o-v';
 pop @args;
 delete $msg->{arg};
+delete $msg->{channel};
 $msg->{mode} = '+o-v';
 ok App::Circle::Bot::_irc_user_mode(@args), 'Send a user mode event';
 is_deeply $h1->clear, { user_mode => $msg },

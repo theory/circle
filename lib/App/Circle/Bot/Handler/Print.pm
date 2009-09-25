@@ -11,6 +11,10 @@ use Class::XSAccessor accessors => { map { $_ => $_ } qw(
 
 use parent 'App::Circle::Bot::Handler';
 
+sub _t () {
+    sprintf '%02d:%02d', (localtime)[2,1];
+}
+
 sub new {
     my $self = shift->SUPER::new(@_);
     unless ($self->fh) {
@@ -24,90 +28,123 @@ sub new {
 
 sub on_connect {
     my ($self, $p) = @_;
-    say $self->bot->server, " says: $p->{body}";
+    say { $self->fh } _t, ' -!- Circle: Connected to ', $self->bot->server, $/,
+        _t, " -!- $p->{body}";
+    return;
 }
 
 sub on_public {
     my ($self, $p) = @_;
-    say { $self->fh } "$p->{channel}/$p->{nick}: $p->{body}";
+    my $op = $self->bot->is_channel_operator($p->{channel}, $p->{nick})
+        ? '@' : ' ';
+    say { $self->fh } _t, " <$op$p->{nick}/$p->{channel}> $p->{body}";
+    return;
 }
 
 sub on_private {
     my ($self, $p) = @_;
-    say { $self->fh } "$p->{nick}: $p->{body}";
+    (my $who = $p->{mask}) =~ s/^~//;
+    say { $self->fh } _t, " [$p->{nick}($who)] $p->{body}";
+    # When circle sends a /msg: _t, " [msg/$to_nick] $body";
+    return;
 }
 
 sub on_emote {
     my ($self, $p) = @_;
-    say { $self->fh } "* $p->{nick} $p->{body}";
+    say { $self->fh } _t, " * $p->{nick}/$p->{channel} $p->{body}";
+    return;
 }
 
 sub on_join {
     my ($self, $p) = @_;
-    say { $self->fh }
-        "    $p->{nick} joined $p->{channel} on ",
-        $self->bot->server;
+    say { $self->fh } _t,
+        " -!- $p->{nick} [$p->{mask}] has joined $p->{channel}";
+    return;
 }
 
 sub on_part {
     my ($self, $p) = @_;
-    say { $self->fh }
-        "    $p->{nick} left $p->{channel} on ",
-        $self->bot->server;
+    my $body = defined $p->{body} ? " [$p->{body}]" : '';
+    say { $self->fh } _t,
+        " -!- $p->{nick} [$p->{mask}] has left $p->{channel}$body";
+    return;
 }
 
 sub on_kick {
     my ($self, $p) = @_;
-    say { $self->fh }
-        "    $p->{nick} kicked $p->{who} from $p->{channel}: $p->{body}";
+    my $body = defined $p->{body} ? " [$p->{body}]" : '';
+    say { $self->fh } _t,
+        " -!- $p->{target} was kicked from $p->{channel} by $p->{nick}$body";
+    return;
 }
 
 sub on_nick {
     my ($self, $p) = @_;
-    say { $self->fh } "    $p->{nick} is now known as $p->{to}";
+    say { $self->fh } _t, " -!- $p->{nick} is now known as $p->{to}";
+    return;
 }
 
 sub on_quit {
     my ($self, $p) = @_;
-    say { $self->fh } "    $p->{nick} quit: $p->{body}";
+    # 10:52 -!- woggle [~somebody@t10.RIC.Berkeley.EDU] has quit [Quit: leaving]
+    my $body = defined $p->{body} ? " [$p->{body}]" : '';
+    say { $self->fh } _t, " -!- $p->{nick} [$p->{mask}] has quit$body";
+    return;
 }
 
 sub on_away {
     my ($self, $p) = @_;
-    say { $self->fh } "    $p->{nick} is away from ",
-        join ', ', @{ $p->{channels} };
+    my $body = defined $p->{body} ? " [$p->{body}]" : '';
+    say { $self->fh } _t, " -!- $p->{nick} [$p->{mask}] is away$body";
+    return;
 }
 
 sub on_back {
     my ($self, $p) = @_;
-    say { $self->fh } "    $p->{nick} is back from ",
-        join ', ', @{ $p->{channels} };
+    say { $self->fh } _t, " -!- $p->{nick} [$p->{mask}] is back";
+    return;
 }
 
 sub on_topic {
     my ($self, $p) = @_;
-    say { $self->fh } "    $p->{nick} set the topic to “$p->{body}”";
+    say { $self->fh } _t,
+        " -!- $p->{nick} changed the topic of $p->{channel} to: $p->{body}";
+    return;
 }
 
 sub on_names {
     my ($self, $p) = @_;
     my $names = $p->{names};
     for my $chan (keys %{ $names }) {
-        say { $self->fh } "    $chan members: ",
-            join ', ', keys %{ $names->{$chan} };
+        my %counts;
+        for my $modes (values %{ $names->{$chan} }) {
+            $counts{total}++;
+            if (@{ $modes }) {
+                $counts{$_}++ for @{ $modes };
+            } else {
+                $counts{normal}++;
+            }
+        }
+        $counts{$_} ||= 0 for qw(o v h);
+        say { $self->fh } _t,  " Circle: $chan: Total of $counts{total} ",
+            "[$counts{o} ops, $counts{h} halfops, $counts{v} voices, ",
+            "$counts{normal} normal]";
     }
+    return;
 }
 
 sub on_chan_mode {
     my ($self, $p) = @_;
-    # say { $self->fh } "    $p->{nick} set $p->{body} ",
-    #     ( defined ? $p->{target} "on $p->{target}" : '' ),
-    #     "in $p->{channel}";
+    my $arg = defined $p->{arg} ? " $p->{arg}" : '';
+    say { $self->fh } _t,
+        " -!- mode/$p->{channel} [$p->{mode}$arg] by $p->{nick}";
+    return;
 }
 
 sub on_user_mode {
     my ($self, $p) = @_;
-    # say { $self->fh } "    $p->{nick} set $p->{body}";
+    say { $self->fh } _t, " -!- mode/$p->{nick} [$p->{mode}]";
+    return;
 }
 
 1;

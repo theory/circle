@@ -830,11 +830,10 @@ sub _irc_333 {
 
 # See http://docs.dal.net/docs/modes.html for mode descriptions.
 sub _irc_user_mode {
-    my ($self, $who, $channel, $mode) = @_[OBJECT, ARG0, ARG1, ARG2];
+    my ($self, $who, $mode) = @_[OBJECT, ARG0, ARG2];
     my ($nick, $mask) = split /!/ => $who;
 
     my @msg = $self->_decode(
-        channel => $channel,
         nick    => $nick,
         mask    => $mask,
         mode    => $mode,
@@ -874,10 +873,15 @@ sub _irc_names {
     my $modes_for = $names->{$channel} ||= {};
 
     for my $nick (@names) {
-        $modes_for->{$nick} = {
-            op    => $nick =~ s/^@// ? 1 : 0,
-            voice => $nick =~ s/^\+// ? 1 : 0,
+        my @modes;
+        if ($nick =~ s/^([@+%]{1,3})//) {
+            for my $char (split '', $1) {
+                push @modes, $char eq '@' ? 'o'
+                           : $char eq '+' ? 'v'
+                           : 'h';
+            }
         }
+        $modes_for->{$nick} = \@modes;
     }
     return $self;
 }
