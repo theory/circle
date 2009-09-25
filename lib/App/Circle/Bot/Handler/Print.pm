@@ -170,6 +170,21 @@ sub _who {
         map { "      -!- $_: $p->{$_}\n" } sort keys %{ $p };
     return;
 }
+
+sub on_notice {
+    my ($self, $p) = @_;
+    my $nick = $self->bot->irc_client->nick_name;
+    my $last = @{ $p->{targets} } > 1 ? pop @{ $p->{targets} } : undef;
+    my $to = join ', ', map { $_ eq $nick ? 'you' : $_  } @{ $p->{targets} };
+    if ($last) {
+        $last = 'you' if $last eq $nick;
+        $to .= ',' if @{ $p->{targets} } > 1;
+        $to .= " and $last";
+    }
+    say { $self->fh } _t, " -!- $p->{nick} has sent a notice to $to: $p->{body}";
+    return;
+}
+
 1;
 __END__
 
@@ -237,7 +252,7 @@ The handlers are:
 
 =item C<on_invite>
 
-=item C<on_notify>
+=item C<on_notice>
 
 =back
 

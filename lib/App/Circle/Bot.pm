@@ -289,6 +289,7 @@ sub run {
                 irc_nick         => '_irc_nick',
                 irc_quit         => '_irc_quit',
                 irc_invite       => '_irc_invite',
+                irc_notice       => '_irc_notice',
 
                 # For stuff, to be messed with later.
                 # fork_close       => '_fork_close_state',
@@ -950,6 +951,22 @@ sub _irc_user_back {
     }
     return $self;
 }
+
+sub _irc_notice {
+    my ($self, $who, $targets, $body) = @_[OBJECT, ARG0..ARG2];
+    my ($nick, $mask) = split /!/ => $who;
+    my @msg = $self->_decode(
+        nick    => $nick,
+        mask    => $mask,
+        body    => _trim $body,
+        targets => $targets,
+    );
+    for my $h (@{ $self->handlers }) {
+        last if $h->on_notice({ @msg });
+    }
+    return $self;
+}
+
 
 # the server can tell us what it thinks the time is. We use this as
 # a work-around for the 'broken' behaviour of freenode (it doesn't send

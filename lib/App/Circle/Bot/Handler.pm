@@ -36,9 +36,9 @@ sub on_chan_mode  { }    # irc_chan_mode
 sub on_invite     { }    # irc_invite
 sub on_whois      { }    # irc_whois
 sub on_whowas     { }    # irc_whowas
+sub on_notice     { }    # irc_notice
 
 sub on_shutdown   { }    # irc_shutdown
-sub on_notify     { }    # irc_notice
 
 # irc_dcc_*
 

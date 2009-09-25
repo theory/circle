@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 #use utf8;
 
-use Test::More tests => 54;
+use Test::More tests => 62;
 #use Test::More 'no_plan';
 use Test::MockModule;
 
@@ -39,13 +39,19 @@ can_ok $CLASS, qw(
     on_whowas
     on_shutdown
     on_invite
-    on_notify
+    on_notice
 );
 
 my $bot = App::Circle::Bot->new(server => 'localhost');
-my $mock = Test::MockModule->new('App::Circle::Bot');
+my $bmock = Test::MockModule->new('App::Circle::Bot');
 my $is_op;
-$mock->mock(is_channel_operator => sub { $is_op });
+$bmock->mock(is_channel_operator => sub { $is_op });
+
+my $irc = bless {} => 'POE::Component::IRC::State';
+my $imock = Test::MockModule->new('POE::Component::IRC::State');
+my $nickname = '';
+$imock->mock( nick_name => sub { $nickname });
+$bot->irc_client($irc);
 
 # Output sent to the file handle will be encoded to UTF-8, so we need
 # to not `use utf8` here.
@@ -253,3 +259,30 @@ $exp = join '', map {
 } sort keys %msg;
 
 is output, "$time -!- WHOWAS bob:\n$exp", 'on_whowas should output message';
+
+# on_notice
+%msg = (
+    nick    => 'bob',
+    mask    => '~bknight@example.com',
+    targets => [qw(fred circle), '#pgtap'],
+    body    => 'You have been noticed',
+);
+ok !$h->on_notice({ %msg }), 'on_notice should return false';
+is output, "$time -!- bob has sent a notice to fred, circle, and #pgtap: You have been noticed\n",
+    'on_notice should output message';
+# One target.
+$msg{targets} = ['circle'];
+ok !$h->on_notice({ %msg }), 'on_notice should return false again';
+is output, "$time -!- bob has sent a notice to circle: You have been noticed\n",
+    'on_notice should output message to single target';
+# Targets include self.
+$nickname = 'circle';
+$msg{targets} = [qw(circle larry)];
+ok !$h->on_notice({ %msg }), 'on_notice should return false yet again';
+is output, "$time -!- bob has sent a notice to you and larry: You have been noticed\n",
+    'on_notice should output message to self and other';
+# Just to self.
+$msg{targets} = ['circle'];
+ok !$h->on_notice({ %msg }), 'on_notice should return one more time';
+is output, "$time -!- bob has sent a notice to you: You have been noticed\n",
+    'on_notice should output message to self';

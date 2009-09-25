@@ -170,6 +170,7 @@ $sess->mock(create => sub {
             irc_nick         => '_irc_nick',
             irc_quit         => '_irc_quit',
             irc_invite       => '_irc_invite',
+            irc_notice       => '_irc_notice',
 
             # For stuff, to be messed with later.
             # fork_close       => '_fork_close_state',
