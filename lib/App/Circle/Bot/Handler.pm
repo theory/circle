@@ -33,11 +33,11 @@ sub on_back       { }    # irc_user_back
 sub on_names      { }    # irc_353/irc_356
 sub on_user_mode  { }    # irc_user_mode
 sub on_chan_mode  { }    # irc_chan_mode
-
+sub on_invite     { }    # irc_invite
 sub on_whois      { }    # irc_whois
 sub on_whowas     { }    # irc_whowas
+
 sub on_shutdown   { }    # irc_shutdown
-sub on_invite     { }    # irc_invite
 sub on_notify     { }    # irc_notice
 
 # irc_dcc_*

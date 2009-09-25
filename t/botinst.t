@@ -178,6 +178,8 @@ $sess->mock(create => sub {
             # Names stuff.
             irc_353          => '_irc_names',
             irc_366          => '_irc_names_end',
+            irc_whois        => '_irc_whois',
+            irc_whowas       => '_irc_whowas',
 
             # Topics stuff.
             irc_332          => '_irc_332',

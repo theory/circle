@@ -5,8 +5,8 @@ use warnings;
 use feature ':5.10';
 #use utf8;
 
-#use Test::More tests => 1;
-use Test::More 'no_plan';
+use Test::More tests => 54;
+#use Test::More 'no_plan';
 use Test::MockModule;
 
 my $CLASS;
@@ -222,3 +222,34 @@ ok !$h->on_invite({ %msg }), 'on_invite should return false';
 is output, "$time -!- fred has invited you to join #pgtap\n",
     'on_invite should output message';
 
+# on_whois.
+%msg = (
+    nick       => 'bob',
+    user       => 'bknight',
+    host       => 'example.com',
+    real       => 'Bob Knight',
+    idle       => 99,
+    signon     => 1253895896,
+    channels   => [ '#perl', '#pgtap' ],
+    server     => 'irc.perl.org',
+    oper       => undef,
+    actually   => undef,
+    account    => 'blah',
+    identified => 1,
+);
+ok !$h->on_whois({ %msg }), 'on_whois should return false';
+$msg{channels} = join ', ', @{ $msg{channels} };
+my $exp = join '', map {
+    "      -!- $_: " . (defined $msg{$_} ? $msg{$_} : '') . "\n"
+} sort keys %msg;
+
+is output, "$time -!- WHOIS bob:\n$exp", 'on_whois should output message';
+
+# on_whowas.
+delete $msg{$_} for qw(idle signon channels oper identified);
+ok !$h->on_whowas({ %msg }), 'on_whowas should return false';
+$exp = join '', map {
+    "      -!- $_: " . (defined $msg{$_} ? $msg{$_} : '') . "\n"
+} sort keys %msg;
+
+is output, "$time -!- WHOWAS bob:\n$exp", 'on_whowas should output message';

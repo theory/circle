@@ -37,7 +37,7 @@ my @meths = qw(
     on_shutdown
     on_invite
     on_notify
-    on_invite
+    on_whois
 );
 
 can_ok $CLASS, 'new', @meths;

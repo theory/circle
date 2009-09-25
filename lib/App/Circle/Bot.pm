@@ -297,6 +297,8 @@ sub run {
                 # Names stuff.
                 irc_353          => '_irc_names',
                 irc_366          => '_irc_names_end',
+                irc_whois        => '_irc_whois',
+                irc_whowas       => '_irc_whowas',
 
                 # Topics stuff.
                 irc_332          => '_irc_332',
@@ -802,6 +804,24 @@ sub _irc_invite {
     );
     for my $h (@{ $self->handlers }) {
         last if $h->on_invite({ @msg });
+    }
+    return $self;
+}
+
+sub _irc_whois {
+    my ($self, $who_data) = @_[OBJECT, ARG0];
+    my @msg = $self->_decode( %{ $who_data } );
+    for my $h (@{ $self->handlers }) {
+        last if $h->on_whois({ @msg });
+    }
+    return $self;
+}
+
+sub _irc_whowas {
+    my ($self, $who_data) = @_[OBJECT, ARG0];
+    my @msg = $self->_decode( %{ $who_data } );
+    for my $h (@{ $self->handlers }) {
+        last if $h->on_whowas({ @msg });
     }
     return $self;
 }

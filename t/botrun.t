@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 152;
+use Test::More tests => 154;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -42,6 +42,9 @@ can_ok $CLASS, qw(
     _irc_names_end
     _irc_user_away
     _irc_user_back
+    _irc_invite
+    _irc_whois
+    _irc_whowas
     _get_time
     _irc_391
     _tick
@@ -499,7 +502,7 @@ $msg->{arg}  = 'larry';
 $msg->{mode} = '+o-v';
 ok App::Circle::Bot::_irc_chan_mode(@args), 'Send a user mode event';
 is_deeply $h1->clear, { chan_mode => $msg },
-    'Mode handler should have received the arguments';
+    'Chan mode handler should have received the arguments';
 
 ##############################################################################
 # Test _irc_user_mode.
@@ -512,7 +515,7 @@ delete $msg->{channel};
 $msg->{mode} = '+o-v';
 ok App::Circle::Bot::_irc_user_mode(@args), 'Send a user mode event';
 is_deeply $h1->clear, { user_mode => $msg },
-    'Mode handler should have received the arguments';
+    'User mode handler should have received the arguments';
 
 ##############################################################################
 # Test _irc_away.
@@ -528,14 +531,14 @@ $msg = {
 };
 ok App::Circle::Bot::_irc_user_away(@args), 'Send a user away event';
 is_deeply $h1->clear, { away => $msg },
-    'Mode handler should have received the arguments';
+    'Away handler should have received the arguments';
 
 ##############################################################################
 # Test _irc_back.
 $args[ARG1] = ['#perl', '#pgtap'];
 ok App::Circle::Bot::_irc_user_back(@args), 'Send a user back event';
 is_deeply $h1->clear, { back => $msg },
-    'Mode handler should have received the arguments';
+    'Back handler should have received the arguments';
 
 ##############################################################################
 # Test _irc_invite.
@@ -546,6 +549,29 @@ delete $msg->{channels};
 ok App::Circle::Bot::_irc_invite(@args), 'Send an invite event';
 is_deeply $h1->clear, { invite => $msg },
     'Mode handler should have received the arguments';
+
+##############################################################################
+# Test _irc_whois.
+$msg = {
+    nick       => 'bob',
+    user       => 'bknight',
+    host       => 'example.com',
+    real       => 'Bob Knight',
+    idle       => 99,
+    signon     => 1253895896,
+    channels   => [ '#perl', '#pgtap' ],
+    server     => 'irc.perl.org',
+    oper       => undef,
+    actually   => undef,
+    account    => 'blah',
+    identified => 1,
+};
+$args[ARG0] = { %{ $msg } };
+pop @args;
+ok App::Circle::Bot::_irc_whois(@args), 'Send a whois event';
+$msg->{channels} = [ '#perl', '#pgtap' ];
+is_deeply $h1->clear, { whois => $msg },
+    'WHOIS handler should have received the arguments';
 
 ##############################################################################
 # Test _get_time.
@@ -613,9 +639,6 @@ is_deeply [ $bot->_encode('David “Theory” Wheeler', 'foo') ], [ $res, 'foo' 
     '_encode() should handle a list of strings';
 
 # To be added:
-# sub on_whois      { }    # irc_whois
 # sub on_whowas     { }    # irc_whowas
 # sub on_shutdown   { }    # irc_shutdown
-# sub on_invite     { }    # irc_invite
 # sub on_notify     { }    # irc_notice
-

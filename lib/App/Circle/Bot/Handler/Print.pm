@@ -153,6 +153,23 @@ sub on_invite {
     return;
 }
 
+sub on_whois {
+    _who(@_, 'WHOIS');
+}
+
+sub on_whowas {
+    _who(@_, 'WHOWAS');
+}
+
+sub _who {
+    my ($self, $p, $event) = @_;
+    $p->{channels} = join( ', ', @{ $p->{channels} } ) || 'none'
+        if exists $p->{channels};
+    no warnings 'uninitialized';
+    print { $self->fh } _t, " -!- $event $p->{nick}:\n",
+        map { "      -!- $_: $p->{$_}\n" } sort keys %{ $p };
+    return;
+}
 1;
 __END__
 
