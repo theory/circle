@@ -168,8 +168,8 @@ $sess->mock(create => sub {
             irc_part         => '_irc_part',
             irc_kick         => '_irc_kick',
             irc_nick         => '_irc_nick',
-            # irc_mode         => '_irc_mode', XXX Need this?
             irc_quit         => '_irc_quit',
+            irc_invite       => '_irc_invite',
 
             # For stuff, to be messed with later.
             # fork_close       => '_fork_close_state',

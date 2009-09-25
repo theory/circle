@@ -147,6 +147,12 @@ sub on_user_mode {
     return;
 }
 
+sub on_invite {
+    my ($self, $p) = @_;
+    say { $self->fh } _t, " -!- $p->{nick} has invited you to join $p->{channel}";
+    return;
+}
+
 1;
 __END__
 

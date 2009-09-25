@@ -288,6 +288,7 @@ sub run {
                 irc_kick         => '_irc_kick',
                 irc_nick         => '_irc_nick',
                 irc_quit         => '_irc_quit',
+                irc_invite       => '_irc_invite',
 
                 # For stuff, to be messed with later.
                 # fork_close       => '_fork_close_state',
@@ -787,6 +788,20 @@ sub _irc_quit {
 
     for my $h (@{ $self->handlers }) {
         last if $h->on_quit({ @msg });
+    }
+    return $self;
+}
+
+sub _irc_invite {
+    my ($self, $who, $channel) = @_[OBJECT, ARG0, ARG1];
+    my ($nick, $mask) = split /!/ => $who;
+    my @msg = $self->_decode(
+        nick    => $nick,
+        mask    => $mask,
+        channel => $channel,
+    );
+    for my $h (@{ $self->handlers }) {
+        last if $h->on_invite({ @msg });
     }
     return $self;
 }

@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 150;
+use Test::More tests => 152;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -535,6 +535,16 @@ is_deeply $h1->clear, { away => $msg },
 $args[ARG1] = ['#perl', '#pgtap'];
 ok App::Circle::Bot::_irc_user_back(@args), 'Send a user back event';
 is_deeply $h1->clear, { back => $msg },
+    'Mode handler should have received the arguments';
+
+##############################################################################
+# Test _irc_invite.
+$args[ARG0] = 'bob!~bknight@example.com';
+$args[ARG1] = '#pgtap';
+$msg->{channel} = '#pgtap';
+delete $msg->{channels};
+ok App::Circle::Bot::_irc_invite(@args), 'Send an invite event';
+is_deeply $h1->clear, { invite => $msg },
     'Mode handler should have received the arguments';
 
 ##############################################################################

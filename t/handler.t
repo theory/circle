@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 26;
+use Test::More tests => 27;
 #use Test::More 'no_plan';
 
 my $CLASS;
@@ -37,6 +37,7 @@ my @meths = qw(
     on_shutdown
     on_invite
     on_notify
+    on_invite
 );
 
 can_ok $CLASS, 'new', @meths;

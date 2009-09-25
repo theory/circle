@@ -134,6 +134,7 @@ is output, "$time -!- DrEvil was kicked from #pgtap by fred\n",
 # on_nick
 delete $msg{body};
 delete $msg{channel};
+delete $msg{target};
 $msg{from} = $msg{nick};
 $msg{to} = 'freddy';
 $msg{channels} = ['#perl', '#pgtap'];
@@ -214,4 +215,10 @@ is output, "$time -!- mode/#pgtap [+i] by fred\n",
 $msg{mode} = '+i';
 ok !$h->on_user_mode({ %msg }), 'on_user_mode should return false';
 is output, "$time -!- mode/fred [+i]\n", 'on_user_mode should output message';
+
+# on_invite
+$msg{channel} = '#pgtap';
+ok !$h->on_invite({ %msg }), 'on_invite should return false';
+is output, "$time -!- fred has invited you to join #pgtap\n",
+    'on_invite should output message';
 
