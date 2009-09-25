@@ -53,21 +53,9 @@ can_ok $CLASS, qw(
     _buffer
 );
 
-# Delegated methods.
+# Methods
 can_ok $CLASS, qw(
-    invite
-    join
-    part
-    nick
-    kick
-    quit
-    topic
-    names
-    who
-    whois
-    whowas
-    shutdown
-    notify
+    yield
 );
 
 ##############################################################################

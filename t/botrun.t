@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 158;
+use Test::More tests => 160;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -137,6 +137,13 @@ $irc->mock( spawn => sub {
     $irc_client;
 });
 $irc->mock( nick_name => 'circlebot' );
+
+my @yield;
+$irc->mock( yield => sub {
+    shift;
+    my @exp = @{ shift @yield };
+    is_deeply \@_, \@exp, 'Should call yield(' . join(', ', @exp) . ')';
+} );
 
 my $poe_session = bless {}, 'POE::Session';
 my $bot = App::Circle::Bot->new(
@@ -662,3 +669,8 @@ my $res = Encode::encode( $bot->encoding, 'David “Theory” Wheeler', Encode::
 is $bot->_encode('David “Theory” Wheeler'), $res, '_encode should work';
 is_deeply [ $bot->_encode('David “Theory” Wheeler', 'foo') ], [ $res, 'foo' ],
     '_encode() should handle a list of strings';
+
+##############################################################################
+# Test yield.
+@yield = ( [ nick => Encode::encode($bot->encoding, 'bjørn', Encode::FB_PERLQQ)] );
+ok $bot->yield( nick => 'bjørn' ), 'Call yield()';

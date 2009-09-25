@@ -42,16 +42,6 @@ use Class::XSAccessor accessors => {
     )
 };
 
-use lib '/Users/david/dev/Kineticode/Class-Delegator/trunk/lib';
-use Class::Delegator
-    send => [qw(invite join part kick nick quit topic names who whois whowas shutdown)],
-      to => 'irc_client',
-
-    send => [qw(notify)],
-      to => 'irc_client',
-      as => [qw(notice)],
-;
-
 =head1 Name
 
 App::Cicle::Bot - App::Circle IRC Bot
@@ -185,26 +175,7 @@ be told about different encodings. Equivalent to C<--encoding>.
     # $bot->op( $nick );
     # $bot->voice( $nick );
 
-    # Delegated.
-    # $bot->invite( $nick, $channel );
-    # $bot->join( $channel );
-    # $bot->join( $channel, $password );
-    # $bot->join( $channel, $password );
-    # $bot->part( @channels );
-    # $bot->kick( $channel, $nick );
-    # $bot->change_nick( $nick );
-    # $bot->quit;
-    # $bot->quit( $witicism );
-    # $bot->topic( $channel );
-    # $bot->topic( $channel, $topic );
-    # $bot->names;
-    # $bot->names( @channels );
-    # $bot->who;
-    # $bot->who( $search_string );
-    # $bot->whois( @nicks );
-    # $bot->whowas( @nicks );
-    # $bot->shutdown;
-    # $bot->notify( $nicks_or_channels, $message );
+=head1 Class Interface
 
 =head2 Constructor
 
@@ -343,6 +314,28 @@ sub go {
 =head3 C<log>
 
 
+
+=head1 Instance Interface
+
+=head2 Instance Methods
+
+=head3 C<yield>
+
+   $bot->yield( nick => 'bjørn' );
+
+Recommended method for posting IRC events. It transparently encodes the
+arguments to C<encoding> before passing them on to the IRC client. If for some
+reason you don't want the arguments to be encoded (are you sending binary
+data?), you can access the client directly like so:
+
+  $bot->irc_client->yield( nick => 'fred' );
+
+=cut
+
+sub yield {
+    my ($self, $to) = (shift, shift);
+    $self->irc_client->yield( $to => $self->_encode( @_ ) );
+}
 
 =head2 Instance Accessors
 
