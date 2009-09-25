@@ -157,6 +157,7 @@ $sess->mock(create => sub {
             irc_391          => '_irc_391',
             _get_time        => '_get_time',
             tick             => '_tick',
+            irc_shutdown     => '_irc_shutdown',
 
             # Conversation
             irc_msg          => '_irc_msg',

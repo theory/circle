@@ -276,6 +276,7 @@ sub run {
                 irc_391          => '_irc_391',
                 _get_time        => '_get_time',
                 tick             => '_tick',
+                irc_shutdown     => '_irc_shutdown',
 
                 # Conversation
                 irc_msg          => '_irc_msg',
@@ -985,9 +986,19 @@ sub _irc_391 {
 }
 
 sub _tick {
-    my ( $self, $kernel, $heap ) = @_[ OBJECT, KERNEL, HEAP ];
+    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
     my $delay = $self->tick_in;
     $kernel->delay( tick => $delay ) if $delay;
+    return $self;
+}
+
+sub _irc_shutdown {
+    my $self = $_[OBJECT];
+    my $by   = $self->_decode($_[ARG0]);
+
+    for my $h (@{ $self->handlers }) {
+        last if $h->on_shutdown({ requestor => $by });
+    }
     return $self;
 }
 

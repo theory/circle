@@ -37,7 +37,6 @@ sub on_invite     { }    # irc_invite
 sub on_whois      { }    # irc_whois
 sub on_whowas     { }    # irc_whowas
 sub on_notice     { }    # irc_notice
-
 sub on_shutdown   { }    # irc_shutdown
 
 # irc_dcc_*
@@ -118,7 +117,7 @@ The handlers are:
 
 =item C<on_invite>
 
-=item C<on_notify>
+=item C<on_notice>
 
 =back
 

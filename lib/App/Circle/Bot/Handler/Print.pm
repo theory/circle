@@ -185,6 +185,12 @@ sub on_notice {
     return;
 }
 
+sub on_shutdown {
+    my ($self, $p) = @_;
+    say { $self->fh } _t, " -!- Circle: Shutdown requested by $p->{requestor}";
+    return;
+}
+
 1;
 __END__
 

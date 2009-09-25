@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 #use utf8;
 
-use Test::More tests => 62;
+use Test::More tests => 64;
 #use Test::More 'no_plan';
 use Test::MockModule;
 
@@ -286,3 +286,9 @@ $msg{targets} = ['circle'];
 ok !$h->on_notice({ %msg }), 'on_notice should return one more time';
 is output, "$time -!- bob has sent a notice to you: You have been noticed\n",
     'on_notice should output message to self';
+
+# on_shutdown.
+ok !$h->on_shutdown({ requestor => 'foobarbaz' }),
+    'on_shutdown should return false';
+is output, "$time -!- Circle: Shutdown requested by foobarbaz\n",
+    'on_shutdown should have printed the right stuff';

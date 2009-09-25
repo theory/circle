@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 156;
+use Test::More tests => 158;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -46,6 +46,7 @@ can_ok $CLASS, qw(
     _irc_whois
     _irc_whowas
     _irc_notice
+    _irc_shutdown
     _get_time
     _irc_391
     _tick
@@ -585,10 +586,17 @@ $msg = {
     targets => [qw(fred larry), '#pgtap'],
     body    => 'You have been noticed',
 };
-ok App::Circle::Bot::_irc_notice(@args), 'Send an notice event';
+ok App::Circle::Bot::_irc_notice(@args), 'Send a notice event';
 is_deeply $h1->clear, { notice => $msg },
     'Mode handler should have received the arguments';
 
+##############################################################################
+# Test _shutdown.
+$args[ARG0] = 'foobarbaz';
+pop @args, pop @args;
+ok App::Circle::Bot::_irc_shutdown(@args), 'Send a shutdown event';
+is_deeply $h1->clear, { shutdown => { requestor => 'foobarbaz' } },
+    'Mode handler should have received the arguments';
 
 ##############################################################################
 # Test _get_time.
@@ -654,6 +662,3 @@ my $res = Encode::encode( $bot->encoding, 'David “Theory” Wheeler', Encode::
 is $bot->_encode('David “Theory” Wheeler'), $res, '_encode should work';
 is_deeply [ $bot->_encode('David “Theory” Wheeler', 'foo') ], [ $res, 'foo' ],
     '_encode() should handle a list of strings';
-
-# To be added:
-# sub on_shutdown   { }    # irc_shutdown
