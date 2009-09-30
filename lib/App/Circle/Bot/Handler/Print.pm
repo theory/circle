@@ -125,7 +125,7 @@ sub on_names {
                 $counts{normal}++;
             }
         }
-        $counts{$_} ||= 0 for qw(o v h);
+        $counts{$_} ||= 0 for qw(o v h total normal);
         say { $self->fh } _t,  " Circle: $chan: Total of $counts{total} ",
             "[$counts{o} ops, $counts{h} halfops, $counts{v} voices, ",
             "$counts{normal} normal]";
@@ -171,16 +171,17 @@ sub _who {
     return;
 }
 
+sub on_ison {
+    my ($self, $p) = @_;
+    my $nick = $self->bot->irc_client->nick_name;
+    say { $self->fh } _t, ' -!- ISON: ', _nicklist($p->{nicks}, $nick);
+    return;
+}
+
 sub on_notice {
     my ($self, $p) = @_;
     my $nick = $self->bot->irc_client->nick_name;
-    my $last = @{ $p->{targets} } > 1 ? pop @{ $p->{targets} } : undef;
-    my $to = join ', ', map { $_ eq $nick ? 'you' : $_  } @{ $p->{targets} };
-    if ($last) {
-        $last = 'you' if $last eq $nick;
-        $to .= ',' if @{ $p->{targets} } > 1;
-        $to .= " and $last";
-    }
+    my $to = _nicklist($p->{targets}, $nick);
     say { $self->fh } _t, " -!- $p->{nick} has sent a notice to $to: $p->{body}";
     return;
 }
@@ -189,6 +190,16 @@ sub on_shutdown {
     my ($self, $p) = @_;
     say { $self->fh } _t, " -!- Circle: Shutdown requested by $p->{requestor}";
     return;
+}
+
+sub _nicklist {
+    my ($list, $nick) = @_;
+    my $last = @{ $list } > 1 ? pop @{ $list } : undef;
+    my $to = join ', ', map { $_ eq $nick ? 'you' : $_  } @{ $list };
+    return $to unless $last;
+    $last = 'you' if $last eq $nick;
+    $to .= ',' if @{ $list } > 1;
+    return "$to and $last";
 }
 
 1;
@@ -253,6 +264,8 @@ The handlers are:
 =item C<on_whois>
 
 =item C<on_whowas>
+
+=item C<on_ison>
 
 =item C<on_shutdown>
 

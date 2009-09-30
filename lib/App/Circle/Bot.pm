@@ -339,6 +339,7 @@ sub run {
                 irc_366          => '_irc_names_end',
                 irc_whois        => '_irc_whois',
                 irc_whowas       => '_irc_whowas',
+                irc_303          => '_irc_ison',
 
                 # Topics stuff.
                 irc_332          => '_irc_332',
@@ -674,6 +675,7 @@ sub _irc_001 {
     for my $h (@{ $self->handlers }) {
         last if $h->on_connect({ @msg });
     }
+
     return $self;
 }
 
@@ -849,6 +851,16 @@ sub _irc_whowas {
     my @msg = $self->_decode( %{ $who_data } );
     for my $h (@{ $self->handlers }) {
         last if $h->on_whowas({ @msg });
+    }
+    return $self;
+}
+
+sub _irc_ison {
+    my ($self, $nicks) = @_[OBJECT, ARG1];
+    my @nicks = $self->_decode(split /\s+/, $nicks);
+    $nicks[0] =~ s/^\://;
+    for my $h (@{ $self->handlers }) {
+        last if $h->on_ison({ nicks => [ @nicks ] });
     }
     return $self;
 }
@@ -1153,6 +1165,12 @@ Add convenience event methods?
 =item * C<< $bot->voice( $nick ); >>
 
 =back
+
+=item *
+
+Break this code out into a separate module without the `go()`, `_config()`,
+and `_getopt()` stuff? Maybe call it Bot::Handlers? IRC::Handlers?
+Bot::IRC::Handlers?
 
 =back
 

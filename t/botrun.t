@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 160;
+use Test::More tests => 164;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -81,7 +81,7 @@ HANDLER: {
     for my $event qw(
            connect disconnect error public private emote join part kick nick
            quit topic away back names whois whowas shutdown invite mode notice
-           user_mode chan_mode
+           user_mode chan_mode ison
     ) {
         eval qq{sub on_$event \{ \$_[0]->dispatches->{$event} = \$_[1]; \$ret \}};
     }
@@ -581,6 +581,24 @@ ok App::Circle::Bot::_irc_whois(@args), 'Send a whois event';
 $msg->{channels} = [ '#perl', '#pgtap' ];
 is_deeply $h1->clear, { whois => $msg },
     'WHOIS handler should have received the arguments';
+
+##############################################################################
+# Test _irc_whowas.
+delete $msg->{$_} for qw(idle signon channels oper actually identified);
+
+$args[ARG0] = { %{ $msg } };
+ok App::Circle::Bot::_irc_whowas(@args), 'Send a whowas event';
+is_deeply $h1->clear, { whowas => $msg },
+    'WHOWAS handler should have received the arguments';
+
+##############################################################################
+# Test _irc_ison.
+$args[ARG0] = 'irc.perl.org';
+$args[ARG1] = 'larry fred wilma';
+$args[ARG2] = [ $args[ARG1] ];
+ok App::Circle::Bot::_irc_ison(@args), 'Send a ison event';
+is_deeply $h1->clear, { ison => { nicks => [qw(larry fred wilma)]} },
+    'ISON handler should have received the arguments';
 
 ##############################################################################
 # Test _irc_notice.

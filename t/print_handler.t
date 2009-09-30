@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 #use utf8;
 
-use Test::More tests => 64;
+use Test::More tests => 66;
 #use Test::More 'no_plan';
 use Test::MockModule;
 
@@ -37,6 +37,7 @@ can_ok $CLASS, qw(
     on_chan_mode
     on_whois
     on_whowas
+    on_ison
     on_shutdown
     on_invite
     on_notice
@@ -259,6 +260,12 @@ $exp = join '', map {
 } sort keys %msg;
 
 is output, "$time -!- WHOWAS bob:\n$exp", 'on_whowas should output message';
+
+# on_ison.
+%msg = ( nicks => [qw(fred barney wilma betty)] );
+ok !$h->on_ison({ %msg }), 'on_ison should return false';
+is output, "$time -!- ISON: fred, barney, wilma, and betty\n",
+    'on_ison should output message';
 
 # on_notice
 %msg = (
