@@ -1,6 +1,6 @@
 ---
 name: Circle (DEV)
-Model::DBI:
+dbi:
   dsn: dbi:Pg:dbname=circle_dev
   username: postgres
   password: ''

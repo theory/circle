@@ -1,6 +1,6 @@
 ---
 name: Circle (STAGE)
-Model::DBI:
+dbi:
   dsn: dbi:Pg:dbname=circle_stage
   username: postgres
   password: ''
