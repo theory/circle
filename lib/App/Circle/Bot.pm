@@ -1128,21 +1128,7 @@ __END__
 
 =item *
 
-Handle mode changes? Would need to track current modes.
-
-=item *
-
-Have _add_message() manage a topic callback when it logs in. Better yet, have
-it not log it when it logs in unless it's different than the last one it
-logged.
-
-=item *
-
 Add some command to get circle not to log something.
-
-=item *
-
-Add support for plugins (/op management, factoids, searches, pastes).
 
 =item *
 
