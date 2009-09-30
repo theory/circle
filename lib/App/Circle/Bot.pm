@@ -43,6 +43,8 @@ use Class::XSAccessor accessors => {
     )
 };
 
+=encoding utf8
+
 =head1 Name
 
 App::Cicle::Bot - App::Circle IRC Bot
