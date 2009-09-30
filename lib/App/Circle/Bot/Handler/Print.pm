@@ -18,7 +18,7 @@ sub _t () {
 sub new {
     my $self = shift->SUPER::new(@_);
     unless ($self->fh) {
-        # Clone STDERR and tell it to use UTF-8;
+        # Clone STDOUT and tell it to use UTF-8;
         open my $stdout, ">&STDOUT" or die "Can't dup STDOUT: $!\n";
         binmode $stdout, ':utf8';
         $self->fh($stdout);

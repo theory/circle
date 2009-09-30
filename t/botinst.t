@@ -22,7 +22,6 @@ can_ok $CLASS, qw(
     go
     run
     new
-    log
 );
 
 # Accessors.

@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 164;
+use Test::More tests => 159;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -120,14 +120,6 @@ $kern->mock(call => sub {
     is_deeply \@_, \@exp, 'Should invoke call(' . join(', ', @exp) . ')';
 });
 
-my @log;
-my $mockbot = Test::MockModule->new($CLASS);
-$mockbot->mock( log => sub {
-    shift;
-    my @exp = @{ shift @log };
-    is_deeply \@_, \@exp, 'Should call log(' . join(', ', @exp) . ')';
-});
-
 my @spawn;
 my $irc = Test::MockModule->new('POE::Component::IRC::State');
 my $irc_client = bless {} => 'POE::Component::IRC::State';
@@ -176,7 +168,6 @@ ok App::Circle::Bot::_stop(@args), 'Stop the bot';
 
 ##############################################################################
 # test _reconnect.
-@log = ([ 'Trying to connect to ' . $bot->host ]);
 my $poe_name = $bot->_poe_name;
 @call = ([ $poe_name => 'disconnect'], [ $poe_name => 'shutdown' ]);
 @spawn = ( alias => $poe_name );
@@ -211,7 +202,6 @@ is $bot->irc_client, $irc_client, 'Should have set irc_client';
     [ $poe_name, 'join',   '#perl'     ],
     [ $poe_name, 'join',   '#pgtap'    ],
 );
-@log  = ([ 'Trying to join #perl'], ['Trying to join #pgtap' ]);
 @delay = ([ tick => 5 ]);
 $args[ARG1] = 'Welcome!';
 
@@ -313,7 +303,6 @@ $args[ARG1] = { my @nick_info = (
     Server => 'my.example.com',
 )};
 $args[ARG2] = [my @channels = ('#perl', '#parrot')];
-@log = (['Lost connection to localhost.']);
 @delay = ( [reconnect => 30 ]);
 ok App::Circle::Bot::_irc_disconnected(@args), 'Send a disconnected event';
 is_deeply $h1->clear, { disconnect => {
@@ -326,7 +315,6 @@ is_deeply $h1->clear, { disconnect => {
 $args[ARG0] = 'WTF?';
 $args[ARG1] = { @nick_info };
 $args[ARG2] = [ @channels  ];
-@log        = ([ 'Server error: WTF?' ]);
 @delay      = ( [reconnect => 30 ]);
 ok App::Circle::Bot::_irc_error(@args), 'Send an error event';
 is_deeply $h1->clear, { error => {

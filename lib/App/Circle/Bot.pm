@@ -291,6 +291,12 @@ sub new {
 
 =head3 C<run>
 
+  $bot->run;
+
+Actually runs the bot, setting up the POE kernel and session and running it.
+Unless the C<no_run> parameter is true, in which case it does everything but
+run POE.
+
 =cut
 
 sub run {
@@ -378,10 +384,6 @@ sub go {
     my $class = shift;
     $class->new( $class->_config )->run;
 }
-
-=head3 C<log>
-
-
 
 =head1 Instance Interface
 
@@ -589,8 +591,6 @@ sub _stop {
 sub _reconnect {
     my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
 
-    $self->log('Trying to connect to ' . $self->host);
-
     my $poe_name = $self->_poe_name;
     $kernel->call( $poe_name => 'disconnect' );
     $kernel->call( $poe_name => 'shutdown' );
@@ -661,7 +661,6 @@ sub _irc_001 {
 
     # connect to the channel
     foreach my $channel ( @{ $self->channels } ) {
-        $self->log("Trying to join $channel");
         $kernel->post( $self->_poe_name, 'join', $self->_encode($channel) );
     }
 
@@ -718,7 +717,6 @@ sub _irc_disconnected {
     my ( $self, $kernel, $server, $nick_info )
         = @_[ OBJECT, KERNEL, ARG0, ARG1 ];
 
-    $self->log( "Lost connection to $server." );
     $kernel->delay( reconnect => 30 );
 
     my $nick     = $self->_decode( $nick_info->{Nick} );
@@ -733,7 +731,6 @@ sub _irc_error {
     my ( $self, $kernel, $nick_info ) = @_[ OBJECT, KERNEL, ARG1 ];
 
     my $err = $self->_decode( $_[ARG0] );
-    $self->log( "Server error: $err" );
     $kernel->delay('reconnect', 30);
 
     my $nick     = $self->_decode( $nick_info->{Nick} );
@@ -1125,11 +1122,6 @@ sub _random_nick {
     return CORE::join( '', ( map { @things[ rand @things ] } 0 .. 4 ), 'bot' );
 }
 
-sub log {
-    shift;
-    say STDERR CORE::join( "\n", @_ );
-}
-
 1;
 
 __END__
@@ -1140,7 +1132,12 @@ __END__
 
 =item *
 
-Add some command to get circle not to log something.
+Add some command to get circle to ignore an event. For example, a user should
+be able to type:
+
+  \ignore Damn I hate that guy who just left!
+
+And circle would not send it to any handlers.
 
 =item *
 
