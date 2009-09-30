@@ -22,3 +22,6 @@ GitHub
 DBI
 Username
 bot's
+username
+circlebot
+hostname

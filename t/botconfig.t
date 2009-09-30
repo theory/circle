@@ -9,6 +9,8 @@ use Test::More tests => 18;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
+use YAML::Syck;
+
 my $CLASS;
 
 BEGIN {
@@ -103,47 +105,54 @@ USAGE: {
 # Test config.
 
 %defaults = (
-    server  => 'localhost',
-    port    => 6667,
-    charset => 'UTF-8',
-    nick    => 'circle',
     verbose => 0,
 );
 
 DEFAULTS: {
-    local @ARGV = ('--config', catfile qw(t defaults.yml));
+    my $file = catfile qw(t defaults.yml);
+    local @ARGV = ('--config', $file);
     ok my %config = $CLASS->_config, 'Should get default config';
+    my $loaded = LoadFile $file;
+    delete $loaded->{irc};
     is_deeply \%config, {
         %defaults,
-        channels => ['#postgresql'],
+        join => '#postgresql',
+        config => $loaded,
     }, 'Should have basic config';
 }
 
 CONFIG: {
-    local @ARGV = ('-c', catfile qw(t basic.yml));
+    my $file = catfile qw(t basic.yml);
+    local @ARGV = ('-c', $file);
     ok my %config = $CLASS->_config, 'Should get basic config';
+    my $loaded = LoadFile $file;
+    delete $loaded->{irc};
     is_deeply \%config, {
         %defaults,
-        server   => 'example.com',
+        host     => 'example.com',
         port     => 6666,
         username => 'bobby',
         password => 'ybbob',
-        channels => ['#postgresql'],
-        nick     => 'fred',
-        charset  => 'big-5',
+        join     => '#postgresql',
+        nickname => 'fred',
+        encoding  => 'big-5',
         ssl      => 1,
         verbose  => 0,
+        config   => $loaded,
     }, 'Should have basic config';
 }
 
 MULTIPLES: {
-    local @ARGV = ('-V', '-V', '--config', catfile qw(t multiples.yml));
+    my $file = catfile qw(t multiples.yml);
+    local @ARGV = ('-V', '-V', '--config', $file);
     ok my %config = $CLASS->_config, 'Should get multiples config';
+    my $loaded = LoadFile $file;
+    delete $loaded->{irc};
     is_deeply \%config, {
         %defaults,
-        channels  => ['#perl', '#postgresql', '#dbi'],
-        nick      => 'fred',
-        alt_nicks => [qw(lucy alice dezi)],
+        join      => ['#perl', '#postgresql', '#dbi'],
+        alt_nicks => [qw(fred lucy alice dezi)],
         verbose   => 2,
+        config    => $loaded,
     }, 'Should have proper multiples config';
 }

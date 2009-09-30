@@ -5,7 +5,7 @@ dbi:
   username: postgres
   password: ''
 irc:
-  server: irc.perl.org
-  join:
+  host: irc.perl.org
+  channels:
     - perl
     - bricolage

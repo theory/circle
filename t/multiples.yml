@@ -4,7 +4,7 @@ irc:
     - '#perl'
     - '#postgresql'
     - '#dbi'
-  nick:
+  alt_nicks:
     - fred
     - lucy
     - alice

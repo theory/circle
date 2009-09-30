@@ -33,7 +33,7 @@ can_ok $CLASS, qw(
     session
     irc_client
     nickname
-    server
+    host
     port
     username
     password
@@ -63,7 +63,7 @@ ok my $bot = $CLASS->new, 'Instantiate plain bot';
 isa_ok $bot, $CLASS;
 
 # Check default attributes.
-is $bot->reconnect_in, 500,           'timeout should be 500';
+is $bot->reconnect_in, 300,           'timeout should be 500';
 is $bot->quit_message, 'Bye',         'quit_message should be "Bye"';
 is $bot->encoding,     'UTF-8',       'encoding should be UTF-8';
 is $bot->tick_in,      0,             'tick_in should be 0';
@@ -85,7 +85,7 @@ ok $bot = $CLASS->new(
     real_name    => 'Larry Wall',
     no_run       => 1,
     nickname     => 'TimToady',
-    server       => 'irc.perl.org',
+    host         => 'irc.perl.org',
     port         => 6669,
     username     => 'larry',
     password     => 'yrral',
@@ -105,7 +105,7 @@ ok $bot = $CLASS->new(
 is $bot->real_name,    'Larry Wall',   'real_name should be set';
 is $bot->no_run,       1,              'no_run should be set';
 is $bot->nickname,     'TimToady',     'nickname should be set';
-is $bot->server,       'irc.perl.org', 'server should be set';
+is $bot->host,         'irc.perl.org', 'host should be set';
 is $bot->port,         6669,           'port should be set';
 is $bot->username,     'larry',        'username should be set';
 is $bot->password,     'yrral',        'password should be set';

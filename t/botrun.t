@@ -147,7 +147,7 @@ $irc->mock( yield => sub {
 
 my $poe_session = bless {}, 'POE::Session';
 my $bot = App::Circle::Bot->new(
-    server   => 'localhost',
+    host     => 'localhost',
     channels => ['#perl', '#pgtap'],
     handlers => [qw(Test Test)],
     tick_in  => 5,
@@ -176,7 +176,7 @@ ok App::Circle::Bot::_stop(@args), 'Stop the bot';
 
 ##############################################################################
 # test _reconnect.
-@log = ([ 'Trying to connect to ' . $bot->server ]);
+@log = ([ 'Trying to connect to ' . $bot->host ]);
 my $poe_name = $bot->_poe_name;
 @call = ([ $poe_name => 'disconnect'], [ $poe_name => 'shutdown' ]);
 @spawn = ( alias => $poe_name );
@@ -184,7 +184,7 @@ my $poe_name = $bot->_poe_name;
     [ $poe_name => 'register', 'all' ],
     [ $poe_name => 'connect', {
         Debug      => 0,
-        Server     => $bot->server,
+        Server     => $bot->host,
         Port       => $bot->port,
         Password   => $bot->password,
         UseSSL     => $bot->use_ssl,

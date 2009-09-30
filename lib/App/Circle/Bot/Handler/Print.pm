@@ -28,7 +28,7 @@ sub new {
 
 sub on_connect {
     my ($self, $p) = @_;
-    say { $self->fh } _t, ' -!- Circle: Connected to ', $self->bot->server, $/,
+    say { $self->fh } _t, ' -!- Circle: Connected to ', $self->bot->host, $/,
         _t, " -!- $p->{body}";
     return;
 }

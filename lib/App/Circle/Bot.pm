@@ -20,7 +20,7 @@ use Class::XSAccessor accessors => {
         kernel
         session
         nickname
-        server
+        host
         port
         username
         password
@@ -36,6 +36,7 @@ use Class::XSAccessor accessors => {
         handlers
         tick_in
         irc_client
+        config
         _poe_name
         _poe_alias
         _buffer
@@ -76,104 +77,27 @@ example:
   irc:
     host: example.com
     port: 6666
-    join: postgresql
+    join:
+      - #perl
+      - #pgtap
+      - #ruby
     nickname: fred
+    alt_nicks:
+      - fred
+      - freddy
+      - frederick
     username: bobby
     password: ybbob
     encoding: big-5
     use_ssl: Y
+    handlers:
+      - Print
+      - Log
 
-All of the bot settings should go under the C<irc> top-level key. Here's a list of
-the supported configuration keys:
-
-=over
-
-=item C<irc>
-
-Configuration for the IRC server.
-
-=over
-
-=item C<nickname>
-
-  nickname: fred
-
-  # - or -
-  nickname:
-    - lucy
-    - dezi
-    - alice
-
-Nickname to use on the IRC server. May be specified as a single value or as a
-list. In the case of a list, the first value will be preferred, and the other
-values used as alternates. Equivalent to C<--nickname>
-
-=item C<join>
-
-  join: #perl
-
-  # - or -
-  join:
-    - #perl
-    - #postgresql
-    - #dbi
-
-One or more IRC channels to join. May be specified as a scalar value for just
-one channel, or as a list for multiple channels. Equivalent to C<--join>
-
-=item C<host>
-
-  host: irc.freenode.net
-
-The IRC server to connect to. Equivalent of C<--host>.
-
-=item C<port>
-
-  port: 6669
-
-The port to connect to the IRC server. Equivalent of C<--port>.
-
-=item C<username>
-
-  username: fred
-
-Username to use when connecting to the IRC server. Equivalent to C<--username>.
-
-=item C<password>
-
-  password: s3kr3t
-
-Password to use to authenticate to the IRC server. Equivalent to C<--password>.
-
-=item C<use_ssl>
-
-  ssl: Y
-
-Connect to the server via SSL. Defaults to false. Equivalent to C<--use-ssl>.
-
-=item C<encoding>
-
-  encoding: Latin-1
-
-IRC has no defined character set for putting high-bit chars into channel.
-Circle assumes UTF-8, but in case your channel thinks differently, the bot can
-be told about different encodings. Equivalent to C<--encoding>.
-
-=back
-
-=back
-
-=cut
-
-    # XXX To be written.
-    # $bot->say( $channel, $whatever );
-    # $bot->reply( $channel, $nick, $whatever );
-    # $bot->msg( $nick, $whatever );
-    # $bot->emote( $channel, $whatever );
-    # $bot->away( $message );
-    # $bot->back;
-    # $bot->op( $nick );
-    # $bot->voice( $nick );
+The main bot settings go under the C<irc> top-level key. Other top-level keys
+are are used for the configuration of one or more handlers. The list of the
+supported configuration keys under the C<irc> key is the same as the list of
+supported parameters to C<new()>.
 
 =head1 Class Interface
 
@@ -187,29 +111,172 @@ be told about different encodings. Equivalent to C<--encoding>.
 Constructs and returns a bot object, ready to be C<run>. The supported
 parameters are:
 
+=over
 
+=item C<nickname>
+
+  nickname => 'circle',
+
+The nickname to use to use on the server. Defaults to "circlebot".
+
+=item C<alt_nicks>
+
+  alt_nicks => [qw(botty _circle)],
+
+An array reference of alternate nicknames to fall back on in case C<nickname>
+is already in use on the server.
+
+=item C<real_name>
+
+  real_name => 'Circle B. Ott',
+
+An optional name to show as the "real name" for the bot.
+
+=item C<host>
+
+  host => 'irc.perl.org',
+
+The hostname or address of the server to connect to. Defaults to C<localhost>,
+which is probably not what you want.
+
+=item C<port>
+
+  port => 6667,
+
+The port to connect to on the server. Defaults to the IRC standard port, 6667.
+
+=item C<username>
+
+  username => 'botty',
+
+The username to use when connecting to the server. Defaults to the value of
+the nickname.
+
+=item C<password>
+
+  password => '5up3rs3kr!t',
+
+Password to use when connecting to the server. Required by some IRC servers.
+
+=item C<use_ssl>
+
+  use_ssl => 1,
+
+Boolean to indicate whether or not to connect to the server via SSL. If true,
+L<POE::Component::SSLify|POE::Component::SSLify> will need to be installed on
+the system. Defaults to false.
+
+=item C<join>
+
+  join => [ '#perl', '#pgtap', '#circle' ],
+
+And array reference listing the names of the channels the bot should join on
+the server.
+
+=item C<allow_flood>
+
+  allow_flood => 1,
+
+When true, disables the bot's flood protection algorithms, allowing it to send
+messages to an IRC server at full speed. Probably not a great idea. False by
+default.
+
+=item C<away_poll>
+
+  away_poll => 30,
+
+How often, in seconds, the bot should poll for away events. Defaults to 60
+seconds.
+
+=item C<reconnect_in>
+
+  reconnect_in => 500,
+
+How long, in seconds, the bot should wait to reconnect to the server if it
+hasn't heard from the server. This is basically how long you want to wait
+before reconnecting if the server looks like it's gone away. Defaults to 300
+seconds.
+
+=item C<quit_message>
+
+  quit_message => 'Later dudes!',
+
+Message the bot should leave when quitting the server. Defaults to "Bye".
+
+=item C<encoding>
+
+  encoding => 'Big5',
+
+IRC has no defined character set for putting high-bit chars into channel.
+Circle assumes UTF-8, but in case your channel thinks differently, you can let
+the bot know it.
+
+=item C<handlers>
+
+  handlers => [qw(Log AnsweringService)],
+
+A list of the handlers to handle IRC events. If none are specified, only the
+<Print|App::Circle::Bot::Handler::Print> Handler will be used. The handlers
+will run for each event in the order specified.
+
+=item C<tick_in>
+
+  tick_in => 5,
+
+The amount of time until the next tick event should be called. Defaults to 0,
+which disables the tick.
+
+=item C<no_run>
+
+  no_run => 1,
+
+Pass a true value to prevent the bot from running when you call C<run()>. The
+POE kernel will be configured and the session created, but the bot won't
+connect to the server or handle any events.
+
+=begin comment
+
+Unimplemented.
+
+=item C<ignore_nicks>
+
+  ignore_nicks => [qw(DrEvil DrNo CanyonMan)],
+
+A list of nicknames whose events should be completely ignored. Optional.
+
+=end comment
+
+=back
 
 =cut
 
 sub new {
     my $class = shift;
     my $self = bless {
-        reconnect_in => 500,
+        reconnect_in => 300,
         quit_message => 'Bye',
         encoding     => 'UTF-8',
         tick_in      => 0,
         away_poll    => 60,
+        nickname     => 'circlebot',
+        host         => 'localhost',
+        port         => 6667,
         @_,
     } => $class;
 
+    # Handle channels.
+    if (my $join = delete $self->{join}) {
+        $self->channels( ref $join ? $join : [$join]);
+    }
+
     $self->_poe_name( 'wanna' . int rand 100000 ) unless $self->_poe_name;
     $self->_poe_alias( 'pony' . int rand 100000 ) unless $self->_poe_alias;
-    $self->nickname( 'circlebot' )                unless $self->nickname;
     $self->username( $self->nickname )            unless $self->username;
     $self->real_name( $self->nickname . ' bot' )  unless $self->real_name;
     $self->ignore_nicks([])                       unless $self->ignore_nicks;
     $self->alt_nicks([])                          unless $self->alt_nicks;
     $self->handlers(['Print'])                    unless $self->handlers;
+
 
     for my $handler (@{ $self->handlers }) {
         $handler = __PACKAGE__ . "::Handler::$handler" unless $handler =~ /::/;
@@ -423,6 +490,10 @@ sub yield {
 
 
 
+=head3 C<config>
+
+
+
 =cut
 
 sub _config {
@@ -437,51 +508,12 @@ sub _config {
     my $config = YAML::Syck::LoadFile($file);
 
     # Take care of the Bot configuration.
-    my $irc = $config->{irc} or $self->_pod2usage(
+    my $irc = delete $config->{irc} or $self->_pod2usage(
         '-message' => "Missing required irc configuration in $file"
     );
 
-    for my $k ( keys %{ $irc } ) {
-        # Perform transformations.
-        given ($k) {
-            when ('join') {
-                $irc->{channels} = ref $irc->{$k}
-                    ?   delete $irc->{$k}
-                    : [ delete $irc->{$k} ];
-            }
-            when ('host')     { $irc->{server}  = delete $irc->{$k} }
-            when ('encoding') { $irc->{charset} = delete $irc->{$k} }
-        }
-    }
-
-    # Modify nicks.
-    if (ref $irc->{nick}) {
-        my @nicks = @{ $irc->{nick} };
-        $irc->{nick} = shift @nicks;
-        $irc->{alt_nicks} = \@nicks if @nicks;
-    }
-
-    # Set default values.
-    for my $spec (
-        [ server  => 'localhost' ],
-        [ port    => 6667        ],
-        [ nick    => 'circle'    ],
-        [ charset => 'UTF-8'     ],
-        [ verbose => 0           ],
-    ) {
-        $irc->{$spec->[0]} = $spec->[1] unless exists $irc->{ $spec->[0] };
-    }
-
-    # Check required options.
-    for my $spec ( [host => 'server'], 'port', [join => 'channels'] ) {
-        my ($opt, $key) = ref $spec ? @{ $spec } : ($spec, $spec);
-        next if $irc->{$key};
-        $self->_pod2usage(
-            '-message' => "Missing required irc/$opt configuration in $file"
-        );
-    }
     # Return the configuration.
-    return ( %{ $irc }, verbose => $opts->{verbose} || 0 );
+    return ( %{ $irc }, config => $config, verbose => $opts->{verbose} || 0 );
 }
 
 sub _getopt {
@@ -556,7 +588,7 @@ sub _stop {
 sub _reconnect {
     my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
 
-    $self->log('Trying to connect to ' . $self->server);
+    $self->log('Trying to connect to ' . $self->host);
 
     my $poe_name = $self->_poe_name;
     $kernel->call( $poe_name => 'disconnect' );
@@ -568,7 +600,7 @@ sub _reconnect {
 
     $kernel->post($poe_name, connect => {
         Debug      => 0,
-        Server     => $self->server,
+        Server     => $self->host,
         Port       => $self->port,
         Password   => $self->password,
         UseSSL     => $self->use_ssl,
@@ -1111,6 +1143,30 @@ Add some command to get circle not to log something.
 =item *
 
 Add support for plugins (/op management, factoids, searches, pastes).
+
+=item *
+
+Add convenience event methods?
+
+=over
+
+=item * C<< $bot->say( $channel, $whatever ); >>
+
+=item * C<< $bot->reply( $channel, $nick, $whatever ); >>
+
+=item * C<< $bot->msg( $nick, $whatever ); >>
+
+=item * C<< $bot->emote( $channel, $whatever ); >>
+
+=item * C<< $bot->away( $message ); >>
+
+=item * C<< $bot->back; >>
+
+=item * C<< $bot->op( $nick ); >>
+
+=item * C<< $bot->voice( $nick ); >>
+
+=back
 
 =back
 

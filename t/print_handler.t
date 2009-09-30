@@ -42,7 +42,7 @@ can_ok $CLASS, qw(
     on_notice
 );
 
-my $bot = App::Circle::Bot->new(server => 'localhost');
+my $bot = App::Circle::Bot->new(host => 'localhost');
 my $bmock = Test::MockModule->new('App::Circle::Bot');
 my $is_op;
 $bmock->mock(is_channel_operator => sub { $is_op });
@@ -237,7 +237,7 @@ is output, "$time -!- fred has invited you to join #pgtap\n",
     idle       => 99,
     signon     => 1253895896,
     channels   => [ '#perl', '#pgtap' ],
-    server     => 'irc.perl.org',
+    host       => 'irc.perl.org',
     oper       => undef,
     actually   => undef,
     account    => 'blah',
