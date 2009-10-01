@@ -1,17 +1,17 @@
 BEGIN;
-SELECT plan( 111 );
+SELECT plan( 127 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
 -- Check for basic schema objects.
-SELECT tables_are(     'public', ARRAY[ 'metadata', 'servers', 'channels', 'nicks', 'messages' ] );
+SELECT tables_are(     'public', ARRAY[ 'metadata', 'hosts', 'channels', 'nicks', 'events' ] );
 SELECT views_are(      'public', '{}'::NAME[] );
-SELECT sequences_are(  'public', ARRAY[ 'messages_id_seq' ] );
+SELECT sequences_are(  'public', ARRAY[ 'events_id_seq' ] );
 SELECT rules_are(      'public', '{}'::NAME[] );
 SELECT functions_are(  'public', ARRAY[
-    'check_server',
+    'check_host',
     'check_references',
-    'add_message'
+    'add_event'
 ] );
 
 
@@ -37,7 +37,7 @@ SELECT col_not_null( 'metadata', 'note' );
 SELECT col_hasnt_default( 'metadata', 'note' );
 
 -- Check that the schema is up-to-date.
-SELECT is( value, 2, 'Schema should be up-to-date')
+SELECT is( value, 4, 'Schema should be up-to-date')
   FROM metadata WHERE label = 'schema_version';
 
 /****************************************************************************/
@@ -90,15 +90,72 @@ SELECT enum_has_labels( 'public', 'irc_command', ARRAY[
 ] );
 
 /****************************************************************************/
--- Validate the servers table.
-SELECT has_table( 'servers' );
-SELECT has_pk( 'servers' );
+-- Validate the event enum.
+SELECT has_enum( 'public', 'irc_event'::name );
+SELECT enum_has_labels( 'public', 'irc_event', ARRAY[
+    'admin',
+    'away',
+    'back',
+    'chan_mode',
+    'cnotice',
+    'connect',
+    'disconnect',
+    'emote',
+    'error',
+    'gline',
+    'helpop',
+    'info',
+    'invite',
+    'ison',
+    'join',
+    'kick',
+    'kill',
+    'links',
+    'list',
+    'lusers',
+    'map',
+    'motd',
+    'names',
+    'nick',
+    'nooper',
+    'notice',
+    'nouser',
+    'oper',
+    'part',
+    'ping',
+    'private',
+    'public',
+    'quit',
+    'rehash',
+    'shutdown',
+    'silence',
+    'stats',
+    'summon',
+    'time',
+    'topic',
+    'unwatch',
+    'user_mode',
+    'userhost',
+    'userip',
+    'users',
+    'version',
+    'watch',
+    'watchlist',
+    'who',
+    'whois',
+    'whowas'
+] );
 
-SELECT has_column( 'servers', 'name' );
-SELECT col_type_is( 'servers', 'name', 'citext' );
-SELECT col_not_null( 'servers', 'name' );
-SELECT col_hasnt_default( 'servers', 'name' );
-SELECT col_is_pk( 'servers', 'name' );
+/****************************************************************************/
+-- Validate the hosts table.
+SELECT has_table( 'hosts' );
+SELECT has_pk( 'hosts' );
+
+SELECT has_column( 'hosts', 'name' );
+SELECT col_type_is( 'hosts', 'name', 'citext' );
+SELECT col_not_null( 'hosts', 'name' );
+SELECT col_hasnt_default( 'hosts', 'name' );
+SELECT col_is_pk( 'hosts', 'name' );
 
 /****************************************************************************/
 -- Validate the channels table.
@@ -109,16 +166,16 @@ SELECT has_column( 'channels', 'name' );
 SELECT col_type_is( 'channels', 'name', 'citext' );
 SELECT col_not_null( 'channels', 'name' );
 SELECT col_hasnt_default( 'channels', 'name' );
-SELECT col_is_pk( 'channels', ARRAY['name', 'server'] );
+SELECT col_is_pk( 'channels', ARRAY['name', 'host'] );
 
-SELECT has_column( 'channels', 'server' );
-SELECT col_type_is( 'channels', 'server', 'citext' );
-SELECT col_not_null( 'channels', 'server' );
-SELECT col_hasnt_default( 'channels', 'server' );
-SELECT col_is_fk( 'channels', 'server' );
+SELECT has_column( 'channels', 'host' );
+SELECT col_type_is( 'channels', 'host', 'citext' );
+SELECT col_not_null( 'channels', 'host' );
+SELECT col_hasnt_default( 'channels', 'host' );
+SELECT col_is_fk( 'channels', 'host' );
 SELECT fk_ok(
-    'channels', 'server',
-    'servers',  'name'
+    'channels', 'host',
+    'hosts',  'name'
 );
 
 
@@ -131,93 +188,115 @@ SELECT has_column( 'nicks', 'name' );
 SELECT col_type_is( 'nicks', 'name', 'citext' );
 SELECT col_not_null( 'nicks', 'name' );
 SELECT col_hasnt_default( 'nicks', 'name' );
-SELECT col_is_pk( 'nicks', ARRAY['name', 'server'] );
+SELECT col_is_pk( 'nicks', ARRAY['name', 'host'] );
 
-SELECT has_column( 'nicks', 'server' );
-SELECT col_type_is( 'nicks', 'server', 'citext' );
-SELECT col_not_null( 'nicks', 'server' );
-SELECT col_hasnt_default( 'nicks', 'server' );
-SELECT col_is_fk( 'nicks', 'server' );
+SELECT has_column( 'nicks', 'host' );
+SELECT col_type_is( 'nicks', 'host', 'citext' );
+SELECT col_not_null( 'nicks', 'host' );
+SELECT col_hasnt_default( 'nicks', 'host' );
+SELECT col_is_fk( 'nicks', 'host' );
 SELECT fk_ok(
-    'nicks', 'server',
-    'servers',  'name'
+    'nicks', 'host',
+    'hosts',  'name'
 );
 
 /****************************************************************************/
 -- Validate the nicks table.
-SELECT has_table( 'messages' );
-SELECT has_pk( 'messages' );
+SELECT has_table( 'events' );
+SELECT has_pk( 'events' );
 
-SELECT has_column( 'messages', 'id' );
-SELECT col_type_is( 'messages', 'id', 'bigint' );
-SELECT col_not_null( 'messages', 'id' );
-SELECT col_has_default( 'messages', 'id' );
-SELECT col_default_is( 'messages', 'id', $$nextval('messages_id_seq'::regclass)$$ );
-SELECT col_is_pk( 'messages', 'id' );
+SELECT has_column( 'events', 'id' );
+SELECT col_type_is( 'events', 'id', 'bigint' );
+SELECT col_not_null( 'events', 'id' );
+SELECT col_has_default( 'events', 'id' );
+SELECT col_default_is( 'events', 'id', $$nextval('events_id_seq'::regclass)$$ );
+SELECT col_is_pk( 'events', 'id' );
 
-SELECT has_column( 'messages', 'server' );
-SELECT col_type_is( 'messages', 'server', 'citext' );
-SELECT col_not_null( 'messages', 'server' );
-SELECT col_hasnt_default( 'messages', 'server' );
-SELECT col_isnt_fk( 'messages', 'server' );
+SELECT has_column( 'events', 'host' );
+SELECT col_type_is( 'events', 'host', 'citext' );
+SELECT col_not_null( 'events', 'host' );
+SELECT col_hasnt_default( 'events', 'host' );
+SELECT col_isnt_fk( 'events', 'host' );
 
-SELECT has_column( 'messages', 'channel' );
-SELECT col_type_is( 'messages', 'channel', 'citext' );
-SELECT col_not_null( 'messages', 'channel' );
-SELECT col_hasnt_default( 'messages', 'channel' );
-SELECT col_is_fk( 'messages', ARRAY['channel', 'server'] );
+SELECT has_column( 'events', 'channel' );
+SELECT col_type_is( 'events', 'channel', 'citext' );
+SELECT col_is_null( 'events', 'channel' );
+SELECT col_hasnt_default( 'events', 'channel' );
+SELECT col_is_fk( 'events', ARRAY['channel', 'host'] );
 SELECT fk_ok(
-    'messages', ARRAY[ 'channel', 'server' ],
-    'channels', ARRAY[ 'name',    'server' ]
+    'events', ARRAY[ 'channel', 'host' ],
+    'channels', ARRAY[ 'name',    'host' ]
 );
 
-SELECT has_column( 'messages', 'nick' );
-SELECT col_type_is( 'messages', 'nick', 'citext' );
-SELECT col_not_null( 'messages', 'nick' );
-SELECT col_hasnt_default( 'messages', 'nick' );
-SELECT col_is_fk( 'messages', ARRAY['nick', 'server'] );
+SELECT has_column( 'events', 'nick' );
+SELECT col_type_is( 'events', 'nick', 'citext' );
+SELECT col_not_null( 'events', 'nick' );
+SELECT col_hasnt_default( 'events', 'nick' );
+SELECT col_is_fk( 'events', ARRAY['nick', 'host'] );
 SELECT fk_ok(
-    'messages', ARRAY[ 'nick', 'server' ],
-    'nicks', ARRAY[ 'name',    'server' ]
+    'events', ARRAY[ 'nick', 'host' ],
+    'nicks', ARRAY[ 'name',    'host' ]
 );
 
-SELECT has_column( 'messages', 'command' );
-SELECT col_type_is( 'messages', 'command', 'irc_command' );
-SELECT col_not_null( 'messages', 'command' );
-SELECT col_has_default( 'messages', 'command' );
-SELECT col_default_is( 'messages', 'command', 'say' );
+SELECT has_column( 'events', 'event' );
+SELECT col_type_is( 'events', 'event', 'irc_event' );
+SELECT col_not_null( 'events', 'event' );
+SELECT col_has_default( 'events', 'event' );
+SELECT col_default_is( 'events', 'event', 'public' );
 
-SELECT has_column( 'messages', 'body' );
-SELECT col_type_is( 'messages', 'body', 'text' );
-SELECT col_not_null( 'messages', 'body' );
-SELECT col_has_default( 'messages', 'body' );
-SELECT col_default_is( 'messages', 'body', '' );
+SELECT has_column( 'events', 'target' );
+SELECT col_type_is( 'events', 'target', 'citext' );
+SELECT col_is_null( 'events', 'target' );
+SELECT col_hasnt_default( 'events', 'target' );
+SELECT col_is_fk( 'events', ARRAY['target', 'host'] );
+SELECT fk_ok(
+    'events', ARRAY[ 'target', 'host' ],
+    'nicks',  ARRAY[ 'name',   'host' ]
+);
 
-SELECT has_column( 'messages', 'tsv' );
-SELECT col_type_is( 'messages', 'tsv', 'tsvector' );
-SELECT col_not_null( 'messages', 'tsv' );
-SELECT col_hasnt_default( 'messages', 'tsv' );
+SELECT has_column( 'events', 'body' );
+SELECT col_type_is( 'events', 'body', 'text' );
+SELECT col_not_null( 'events', 'body' );
+SELECT col_has_default( 'events', 'body' );
+SELECT col_default_is( 'events', 'body', '' );
 
-SELECT has_column( 'messages', 'seen_at' );
-SELECT col_type_is( 'messages', 'seen_at', 'timestamp with time zone' );
-SELECT col_not_null( 'messages', 'seen_at' );
-SELECT col_has_default( 'messages', 'seen_at' );
-SELECT col_default_is( 'messages', 'seen_at', 'clock_timestamp()' );
+SELECT has_column( 'events', 'tsv' );
+SELECT col_type_is( 'events', 'tsv', 'tsvector' );
+SELECT col_not_null( 'events', 'tsv' );
+SELECT col_hasnt_default( 'events', 'tsv' );
 
-SELECT has_column( 'messages', 'is_spam' );
-SELECT col_type_is( 'messages', 'is_spam', 'boolean' );
-SELECT col_not_null( 'messages', 'is_spam' );
-SELECT col_has_default( 'messages', 'is_spam' );
-SELECT col_default_is( 'messages', 'is_spam', 'false' );
+SELECT has_column( 'events', 'seen_at' );
+SELECT col_type_is( 'events', 'seen_at', 'timestamp with time zone' );
+SELECT col_not_null( 'events', 'seen_at' );
+SELECT col_has_default( 'events', 'seen_at' );
+SELECT col_default_is( 'events', 'seen_at', 'clock_timestamp()' );
 
-SELECT has_index( 'messages', 'message_body_fti', 'tsv'::name );
-SELECT index_is_type( 'messages', 'message_body_fti', 'gin' );
+SELECT has_column( 'events', 'is_spam' );
+SELECT col_type_is( 'events', 'is_spam', 'boolean' );
+SELECT col_not_null( 'events', 'is_spam' );
+SELECT col_has_default( 'events', 'is_spam' );
+SELECT col_default_is( 'events', 'is_spam', 'false' );
 
-SELECT has_index( 'messages', 'message_seen_at_idx', 'seen_at'::name );
-SELECT index_is_type( 'messages', 'message_seen_at_idx', 'btree' );
+SELECT has_index( 'events', 'event_body_fti', 'tsv'::name );
+SELECT index_is_type( 'events', 'event_body_fti', 'gin' );
 
-SELECT has_index( 'messages', 'message_channel_fdx', ARRAY['server', 'channel'] );
-SELECT index_is_type( 'messages', 'message_channel_fdx', 'btree' );
+SELECT has_index( 'events', 'event_seen_at_idx', 'seen_at'::name );
+SELECT index_is_type( 'events', 'event_seen_at_idx', 'btree' );
+
+SELECT has_index( 'events', 'event_host_fdx', 'host'::name );
+SELECT index_is_type( 'events', 'event_host_fdx', 'btree' );
+
+SELECT has_index( 'events', 'event_event_idx', 'event'::name );
+SELECT index_is_type( 'events', 'event_event_idx', 'btree' );
+
+SELECT has_index( 'events', 'event_nick_fdx', ARRAY['nick', 'host'] );
+SELECT index_is_type( 'events', 'event_nick_fdx', 'btree' );
+
+SELECT has_index( 'events', 'event_channel_fdx', ARRAY['channel', 'host'] );
+SELECT index_is_type( 'events', 'event_channel_fdx', 'btree' );
+
+SELECT has_index( 'events', 'event_target_fdx', ARRAY['target', 'host'] );
+SELECT index_is_type( 'events', 'event_target_fdx', 'btree' );
 
 /****************************************************************************/
 -- Finish up and go home.

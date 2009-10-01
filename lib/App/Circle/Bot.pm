@@ -1246,7 +1246,7 @@ sub _irc_whowas {
 
 =head3 C<on_ison>
 
-Called when the server responds to an C<ISONW> command from the bot. The
+Called when the server responds to an C<ISON> command from the bot. The
 parameters passed to the handlers are:
 
 =over
