@@ -722,8 +722,10 @@ The channel to which the message was sent.
 
 =item C<to>
 
-If the message is addressed to the bot -- using any of the bot's known nicks
--- the nick used will be passed here.
+If the message is addressed to someone on the channel, this parameter will be
+set to the nick of that someone. For example, a message that says, "bob: hi",
+the C<to> parameter will be set to "bob" if "bob" is on the channel at the
+time the message is received.
 
 =back
 
@@ -732,7 +734,7 @@ If the message is addressed to the bot -- using any of the bot's known nicks
 sub _irc_public {
     my $self = shift;
     my %msg = $self->_msg(@_);
-    $msg{to} = _to($self, $msg{body});
+    $msg{to} = _to($self, \%msg);
     for my $h (@{ $self->handlers }) {
         last if $h->on_public({ %msg });
     }
@@ -1708,10 +1710,10 @@ sub _msg {
 }
 
 sub _to {
-    my ($self, $body) = @_;
-    for my $nick( $self->nickname, @{ $self->alt_nicks }) {
-        next unless $body =~ /^(\Q$nick\E)(?:\s*[:,-]|\s|$)/i;
-        return $1;
+    my ($self, $msg) = @_;
+    if (my ($maybe_nick) = $msg->{body} =~ /^([^-:,\s]+)(?:\s*[:,-]|\s|$)/) {
+        return $self->irc_client->is_channel_member($msg->{channel}, $maybe_nick)
+            ? $maybe_nick : undef;
     }
     return;
 }

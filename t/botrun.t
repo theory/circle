@@ -129,6 +129,8 @@ $irc->mock( spawn => sub {
     $irc_client;
 });
 $irc->mock( nick_name => 'circlebot' );
+my $in_channel = 0;
+$irc->mock( is_channel_member => sub { $in_channel });
 
 my @yield;
 $irc->mock( yield => sub {
@@ -236,18 +238,20 @@ is_deeply [ App::Circle::Bot::_msg(@args) ], $msg,
 
 ##############################################################################
 # Test _to().
-is $bot->_to('Hey there'),        undef,       '_to() finds no address';
-is $bot->_to('circlebot hey!'),   'circlebot', '_to() finds address';
-is $bot->_to('circlebot'),        'circlebot', '_to() finds address only';
-is $bot->_to('circlebot:hey!'),   'circlebot', '_to() finds "address:"';
-is $bot->_to('circlebot: hey!'),  'circlebot', '_to() finds "address: "';
-is $bot->_to('circlebot : hey!'), 'circlebot', '_to() finds "address : "';
-is $bot->_to('circlebot,hey!'),   'circlebot', '_to() finds "address,"';
-is $bot->_to('circlebot, hey!'),  'circlebot', '_to() finds "address, "';
-is $bot->_to('circlebot , hey!'), 'circlebot', '_to() finds "address , "';
-is $bot->_to('circlebot-hey!'),   'circlebot', '_to() finds "address-';
-is $bot->_to('circlebot- hey!'),  'circlebot', '_to() finds "address- "';
-is $bot->_to('circlebot - hey!'), 'circlebot', '_to() finds "address - "';
+is $bot->_to({ body => 'Hey there'        }),  undef,      '_to() finds no address';
+$in_channel = 1;
+is $bot->_to({ body => 'circlebot hey!'   }), 'circlebot', '_to() finds address';
+is $bot->_to({ body => 'circlebot'        }), 'circlebot', '_to() finds address only';
+is $bot->_to({ body => 'circlebot:hey!'   }), 'circlebot', '_to() finds "address:"';
+is $bot->_to({ body => 'circlebot: hey!'  }), 'circlebot', '_to() finds "address: "';
+is $bot->_to({ body => 'circlebot : hey!' }), 'circlebot', '_to() finds "address : "';
+is $bot->_to({ body => 'circlebot,hey!'   }), 'circlebot', '_to() finds "address,"';
+is $bot->_to({ body => 'circlebot, hey!'  }), 'circlebot', '_to() finds "address, "';
+is $bot->_to({ body => 'circlebot , hey!' }), 'circlebot', '_to() finds "address , "';
+is $bot->_to({ body => 'circlebot-hey!'   }), 'circlebot', '_to() finds "address-';
+is $bot->_to({ body => 'circlebot- hey!'  }), 'circlebot', '_to() finds "address- "';
+is $bot->_to({ body => 'circlebot - hey!' }), 'circlebot', '_to() finds "address - "';
+$in_channel = 0;
 
 ##############################################################################
 # Test _irc_public.
