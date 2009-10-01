@@ -65,7 +65,7 @@ my $runner = sub {
     # variables can be set at runtime.
     require App::Circle;
 
-    App:Circle->run(
+    App::Circle->run(
         $port, $host,
         {
             argv       => \@argv,
