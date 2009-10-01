@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 159;
+use Test::More tests => 161;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -198,7 +198,7 @@ is $bot->irc_client, $irc_client, 'Should have set irc_client';
 ##############################################################################
 # Test irc_001.
 @post = (
-    [ $poe_name, 'ignore', 'circlebot' ],
+#    [ $poe_name, 'ignore', 'circlebot' ],
     [ $poe_name, 'join',   '#perl'     ],
     [ $poe_name, 'join',   '#pgtap'    ],
 );
@@ -397,6 +397,13 @@ $msg->{target} = 'lathos';
 $msg->{body} = 'jerking my chain';
 ok App::Circle::Bot::_irc_kick(@args), 'Send a kick event';
 is_deeply $h1->clear, { kick => $msg }, 'Handler should have received message';
+
+# And when we've been kicked?
+$args[ARG2] = $bot->irc_client->nick_name;
+ok App::Circle::Bot::_irc_kick(@args), 'Have bob kick the bot';
+$msg->{target} = $bot->irc_client->nick_name;
+is_deeply $h1->clear, { kick => $msg }, 'Handler should have received kick message';
+is_deeply $bot->channels, ['#parrot'], 'Should still still now have one channel';
 
 ##############################################################################
 # Test _irc_nick.

@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 #use utf8;
 
-use Test::More tests => 66;
+use Test::More tests => 70;
 #use Test::More 'no_plan';
 use Test::MockModule;
 
@@ -86,6 +86,18 @@ ok !$h->on_connect({ nick => 'fred', body => 'Welcome' }),
     'on_connect should return false';
 is output, "$time -!- Circle: Connected to localhost\n$time -!- Welcome\n",
     'on_connect should have printed the right stuff';
+
+# on_disconnect.
+ok !$h->on_disconnect({ nick => 'circlebot', channels => ['#perl', '#pgtap'] }),
+    'on_disconnect should return false';
+is output, "$time -!- Circle: Disconnected from localhost\n",
+    'on_disconnect should have printed the right stuff';
+
+# on_error.
+ok !$h->on_error({ nick => 'circlebot', channels => ['#perl', '#pgtap'], body => 'OMGWTF?' }),
+    'on_error should return false';
+is output, "$time -!- Circle: Error from localhost: OMGWTF?\n",
+    'on_error should have printed the right stuff';
 
 my %msg = (
     nick    => 'fred',

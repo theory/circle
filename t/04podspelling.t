@@ -25,3 +25,7 @@ bot's
 username
 circlebot
 hostname
+hostmask
+Freenode
+IP
+IRCop

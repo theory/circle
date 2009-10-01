@@ -33,6 +33,19 @@ sub on_connect {
     return;
 }
 
+sub on_disconnect {
+    my ($self, $p) = @_;
+    say { $self->fh } _t, ' -!- Circle: Disconnected from ', $self->bot->host;
+    return;
+}
+
+sub on_error {
+    my ($self, $p) = @_;
+    say { $self->fh } _t, ' -!- Circle: Error from ', $self->bot->host,
+        ": $p->{body}";
+    return;
+}
+
 sub on_public {
     my ($self, $p) = @_;
     my $op = $self->bot->is_channel_operator($p->{channel}, $p->{nick})

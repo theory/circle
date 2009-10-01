@@ -570,6 +570,7 @@ sub _trim($) {
     $_[0];
 }
 
+# Not passed to handlers.
 sub _start {
     my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
     $self->kernel( $kernel );
@@ -583,6 +584,7 @@ sub _start {
     return $self;
 }
 
+# Not passed to handlers.
 sub _stop {
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
     $kernel->post( $self->_poe_name, 'quit', $self->_encode($self->quit_message) );
@@ -590,6 +592,7 @@ sub _stop {
     return $self;
 }
 
+# Not passed to handlers.
 sub _reconnect {
     my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
 
@@ -633,12 +636,27 @@ be sure that the content is in Perl's internal C<utf8> form.
 
 =head2 Event Handlers
 
-The methods supported in event handlers are:
+Each event-handling method can expect a single argument to be passed: a hash
+with data appropriate to the event. For example, the C<on_public> event will
+be called something like this:
+
+  $handler->on_public({
+      nick    => 'bob',
+      mask    => '~bknight@example.com',
+      body    => 'Howdy',
+      channel => '#perl',
+      to      => undef,
+  });
+
+Thus the interface for all of the event handler methods is the same: only the
+keys in the parameter hash vary.
+
+The supported event-handler methods are:
 
 =head3 C<on_connect>
 
-Executed after circle has connected to the IRC server and joined all the
-channels. the parameters passed are:
+Called after circle has connected to the IRC server and joined all the
+channels. The parameters passed are:
 
 =over
 
@@ -659,7 +677,7 @@ sub _irc_001 {
     my ( $self, $kernel, $body) = @_[ OBJECT, KERNEL, ARG1 ];
 
     # ignore all messages from ourselves
-    $kernel->post( $self->_poe_name, 'ignore', $self->_encode($self->nickname) );
+#   $kernel->post( $self->_poe_name, 'ignore', $self->_encode($self->nickname) );
 
     # connect to the channel
     foreach my $channel ( @{ $self->channels } ) {
@@ -680,6 +698,37 @@ sub _irc_001 {
     return $self;
 }
 
+=head3 C<on_public>
+
+Called when a public message is sent to a channel. The parameters passed are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who sent the message.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<body>
+
+The body of the message.
+
+=item C<channel>
+
+The channel to which the message was sent.
+
+=item C<to>
+
+If the message is addressed to the bot -- using any of the bot's known nicks
+-- the nick used will be passed here.
+
+=back
+
+=cut
+
 sub _irc_public {
     my $self = shift;
     my %msg = $self->_msg(@_);
@@ -689,6 +738,28 @@ sub _irc_public {
     }
     return $self;
 }
+
+=head3 C<on_private>
+
+Called when a private message is sent to the bot. The parameters passed are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who sent the message.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<body>
+
+The body of the message.
+
+=back
+
+=cut
 
 sub _irc_msg {
     my $self = shift;
@@ -700,6 +771,33 @@ sub _irc_msg {
     return $self;
 }
 
+=head3 C<on_emote>
+
+Called when a public emote message is sent to a channel (CTCP_ACTION). The
+parameters passed are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who sent the emote message.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<body>
+
+The body of the emote message.
+
+=item C<channel>
+
+The channel to which the emote message was sent.
+
+=back
+
+=cut
+
 sub _irc_emote {
     my $self = shift;
     my %msg = $self->_msg(@_);
@@ -709,11 +807,33 @@ sub _irc_emote {
     return $self;
 }
 
+# Not passed to handlers.
 sub _irc_ping {
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
     $kernel->delay( reconnect => $self->reconnect_in );
     return $self;
 }
+
+=head3 C<on_disconnect>
+
+Called when the bot is disconnected from the server. Circle will schedule
+itself to try reconnecting in 30 seconds, and then call the C<on_disconnect>
+handlers. The parameters passed are:
+
+=over
+
+=item C<nick>
+
+The bot's own nickname at the time of the disconnect.
+
+=item C<channels>
+
+A list of the channels the bot was on. Useful for logging that the bot has
+left (or been disconnected from ) those channels.
+
+=back
+
+=cut
 
 sub _irc_disconnected {
     my ( $self, $kernel, $server, $nick_info )
@@ -729,6 +849,31 @@ sub _irc_disconnected {
     return $self;
 }
 
+=head3 C<on_error>
+
+Called when the bot receives an error message or socket error message from the
+server. Circle will schedule itself to try reconnecting in 30 seconds, and
+then call the C<on_error> handlers. The parameters passed are:
+
+=over
+
+=item C<nick>
+
+The bot's own nickname at the time of the disconnect.
+
+=item C<channels>
+
+A list of the channels the bot was on. Useful for logging that the bot has
+left (or been disconnected from ) those channels.
+
+=item C<body>
+
+The body of the error message.
+
+=back
+
+=cut
+
 sub _irc_error {
     my ( $self, $kernel, $nick_info ) = @_[ OBJECT, KERNEL, ARG1 ];
 
@@ -742,6 +887,30 @@ sub _irc_error {
     }
     return $self;
 }
+
+=head3 C<on_join>
+
+Called when a user joins a channel. If it's the bot itself that's joined the
+channel, it will add the channel to the return value of C<channels()>. The
+parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who joined the channel.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channel>
+
+The channel that the user joined.
+
+=back
+
+=cut
 
 sub _irc_join {
     my ( $self, $kernel, $channel ) = @_[ OBJECT, KERNEL, ARG1 ];
@@ -759,6 +928,30 @@ sub _irc_join {
     return $self;
 }
 
+=head3 C<on_part>
+
+Called when a user parts (leaves) a channel. If it's the bot itself that's
+parted, it will remove the channel to the return value of C<channels()>. The
+parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who parted the channel.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channel>
+
+The channel that the user parted.
+
+=back
+
+=cut
+
 sub _irc_part {
     my ( $self, $kernel, $channel ) = @_[ OBJECT, KERNEL, ARG1 ];
     my %msg = _msg(@_);
@@ -773,21 +966,91 @@ sub _irc_part {
     return $self;
 }
 
+=head3 C<on_kick>
+
+Called when a user kicks another user from a channel. If it's the bot itself
+that's kicked, it will remove the channel to the return value of
+C<channels()>. The parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who did the kicking.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<target>
+
+The nickname of the unfortunate soul who was kicked.
+
+=item C<channel>
+
+The channel from which the user was kicked.
+
+=item C<body>
+
+The body of the kick message, also known as the "reason" the user was kicked.
+May be blank if no reason was given.
+
+=back
+
+=cut
+
 sub _irc_kick {
     my ($self, $who, $channel, $target, $body) = @_[OBJECT, ARG0..ARG3];
     my ($nick, $mask) = split /!/ => $who;
-    my @msg = $self->_decode(
+    my %msg = $self->_decode(
         nick    => $nick,
         mask    => $mask,
         body    => _trim $body,
-        channel => $channel,
+        channel => "$channel",
         target  => $target,
     );
+
+    if ( $self->_decode( $self->irc_client->nick_name ) eq $msg{target} ) {
+        # We've been kicked from the channel. Make a note of it.
+        $self->channels( [ grep { $_ ne $channel } @{ $self->channels } ] );
+    }
+
     for my $h (@{ $self->handlers }) {
-        last if $h->on_kick({ @msg });
+        last if $h->on_kick({ %msg });
     }
     return $self;
 }
+
+=head3 C<on_nick>
+
+Called when a user changes her nick. The parameters passed to the handlers
+are:
+
+=over
+
+=item C<nick>
+
+The user's old nickname.
+
+=item C<from>
+
+An alias for C<nick>.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<to>
+
+The user's new nickname.
+
+=item C<channels>
+
+An array reference of all of the channels common to the user and the bot.
+
+=back
+
+=cut
 
 sub _irc_nick {
     my ($self, $who, $newnick, $channels) = @_[OBJECT, ARG0, ARG1, ARG2];
@@ -804,6 +1067,34 @@ sub _irc_nick {
     }
     return $self;
 }
+
+=head3 C<on_quit>
+
+Called when a user quits IRC (or is C<KILL>ed). The parameters passed to the
+handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who quit.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channels>
+
+An array reference of all of the channels common to the user and the bot.
+
+=item C<body>
+
+The body of the clever, witty message the user left behind on the way out. May
+be blank.
+
+=back
+
+=cut
 
 sub _irc_quit {
     my ($self, $who, $body, $channels) = @_[OBJECT, ARG0, ARG1, ARG2];
@@ -822,6 +1113,29 @@ sub _irc_quit {
     return $self;
 }
 
+=head3 C<on_invite>
+
+Called when a user invites the bot to join a channel. The parameters passed to
+the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who invited the bot.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channel>
+
+The channel to which the bot has been invited.
+
+=back
+
+=cut
+
 sub _irc_invite {
     my ($self, $who, $channel) = @_[OBJECT, ARG0, ARG1];
     my ($nick, $mask) = split /!/ => $who;
@@ -836,6 +1150,72 @@ sub _irc_invite {
     return $self;
 }
 
+=head3 C<on_whois>
+
+Called when the server responds to a C<WHOIS> command from the bot. The
+parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+The user's nickname.
+
+=item C<user>
+
+The user's username.
+
+=item C<host>
+
+The user's hostname.
+
+=item C<real>
+
+The user's real name.
+
+=item C<idle>
+
+The user's idle time in seconds.
+
+=item C<signon>
+
+The epoch time when the user signed on (will be C<undef> if the IRC server
+doesn't include this information).
+
+=item C<channels>
+
+An array reference listing the visible channels the user is on; Each channel
+name may be prefixed with "@", "+", and/or "%" depending on whether the user
+is an operator, is voiced, or is a half-operator on the channel.
+
+=item C<server>
+
+The user's server (may not be useful on some networks).
+
+=item C<oper>
+
+Indicates whether or not the user is an IRCop; contains the IRC operator
+string if they are, C<undef> if they aren't.
+
+=item C<actually>
+
+Some IRC servers report the user's actual IP address; for those servers, the
+IP address will be under this key.
+
+=item C<account>
+
+On C<ircu> servers, if the user has registered with services, there will be an
+"account" key.
+
+=item C<identified>
+
+On Freenode if the user has identified with C<NICKSERV>, this key will be set
+to a true value.
+
+=back
+
+=cut
+
 sub _irc_whois {
     my ($self, $who_data) = @_[OBJECT, ARG0];
     my @msg = $self->_decode( %{ $who_data } );
@@ -844,6 +1224,14 @@ sub _irc_whois {
     }
     return $self;
 }
+
+=head3 C<on_whowas>
+
+Called when the server responds to a C<WHOWAS> command from the bot. The
+parameters passed to the handlers are the same as those for C<on_whois>, minus
+a few keys.
+
+=cut
 
 sub _irc_whowas {
     my ($self, $who_data) = @_[OBJECT, ARG0];
@@ -854,6 +1242,22 @@ sub _irc_whowas {
     return $self;
 }
 
+=head3 C<on_ison>
+
+Called when the server responds to an C<ISONW> command from the bot. The
+parameters passed to the handlers are:
+
+=over
+
+=item C<nicks>
+
+An array reference listing the subset of the nicknames queried in the
+C<ISON> command that are actually logged into the server.
+
+=back
+
+=cut
+
 sub _irc_ison {
     my ($self, $nicks) = @_[OBJECT, ARG1];
     my @nicks = $self->_decode(split /\s+/, $nicks);
@@ -863,6 +1267,39 @@ sub _irc_ison {
     }
     return $self;
 }
+
+=head3 C<on_topic>
+
+Called when a user sets the topic on a channel. The parameters passed to the
+handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who set the topic.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<body>
+
+The body of the new topic.
+
+=item C<channel>
+
+The channel on which the topic was set.
+
+=item C<at>
+
+The time at which the topic was set, in seconds from the epoch. This parameter
+will only be set when Circle connects to a channel, not when someone has
+actually just set the topic.
+
+=back
+
+=cut
 
 sub _irc_topic {
     my $self = shift;
@@ -901,7 +1338,30 @@ sub _irc_333 {
     return $self;
 }
 
-# See http://docs.dal.net/docs/modes.html for mode descriptions.
+=head3 C<on_user_mode>
+
+Called when a the bot has set its own user mode and the server replies to
+confirm such. The parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who set the topic.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<mode>
+
+The mode the user set. See L<http://docs.dal.net/docs/modes.html> for a
+description of user modes.
+
+=back
+
+=cut
+
 sub _irc_user_mode {
     my ($self, $who, $mode) = @_[OBJECT, ARG0, ARG2];
     my ($nick, $mask) = split /!/ => $who;
@@ -917,6 +1377,40 @@ sub _irc_user_mode {
     }
     return $self;
 }
+
+=head3 C<on_chan_mode>
+
+Called when a channel operator has changed the mode of a channel. The
+parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who set the topic.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channel>
+
+The channel for which the mode was set.
+
+=item C<mode>
+
+The mode set for the channel. See L<http://docs.dal.net/docs/modes.html> for a
+description of channel modes.
+
+=item C<arg>
+
+The argument for the mode change, if any. For example, if a user was voiced on
+a channel, the C<mode> would be C<+v> and the C<arg> would be the nickname of
+the newly-voiced user.
+
+=back
+
+=cut
 
 sub _irc_chan_mode {
     my ($self, $who, $channel, $mode, $arg) = @_[OBJECT, ARG0..ARG3];
@@ -935,6 +1429,58 @@ sub _irc_chan_mode {
     }
     return $self;
 }
+
+=head3 C<on_names>
+
+Called when the bot has sent a C<NAMES> command to the IRC server and the
+server has replied with the requested names. The parameters passed to the
+handlers are:
+
+=over
+
+=item C<names>
+
+A hash reference of the returned data. The keys are channel names and the
+values are hash references with the names data for each channel. For these
+values, the keys are the nicknames on the channels, and the values are array
+references that may contain any of the following characters:
+
+=over
+
+=item C<o>
+
+The user is an operator on the channel.
+
+=item C<v>
+
+The user is voiced on the channel.
+
+=item C<h>
+
+The user is a half-operator on the channel.
+
+=back
+
+So it might look something like this:
+
+  names => {
+      '#perl' => {
+          TimToady => [qw( o v )], # operator, voiced
+          allison  => [qw( h v )], # halfop, voiced
+          CanonMan => [         ],
+      },
+      '#pgtap' => {
+          theory   => [qw( o v )], # operator, voiced
+          agliodbs => [qw( v   )], # voiced
+          selena   => [qw( v h )], # voiced, halfop
+          bob      => [         ],
+          duncan   => [         ],
+      },
+  }
+
+=back
+
+=cut
 
 sub _irc_names {
     my ($self, $body) = @_[OBJECT, ARG1];
@@ -971,6 +1517,31 @@ sub _irc_names_end {
     return $self;
 }
 
+=head3 C<on_away>
+
+Called when a user has gone away. Note that how quickly and frequently Circle
+notices that a user has gone away is determined by the C<away_poll> parameter
+to C<new()>. The parameters passed to the handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who went away.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channels>
+
+An array reference of the names of the channels common to both the user and
+the bot.
+
+=back
+
+=cut
+
 sub _irc_user_away {
     my $self = shift;
     my @msg = $self->_away_msg(@_);
@@ -980,6 +1551,32 @@ sub _irc_user_away {
     return $self;
 }
 
+=head3 C<on_back>
+
+Called when a user is back from being away. Note that how quickly and
+frequently Circle notices that a user has gone away or come back is determined
+by the C<away_poll> parameter to C<new()>. The parameters passed to the
+handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who has come back.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<channels>
+
+An array reference of the names of the channels common to both the user and
+the bot.
+
+=back
+
+=cut
+
 sub _irc_user_back {
     my $self = shift;
     my @msg = $self->_away_msg(@_);
@@ -988,6 +1585,34 @@ sub _irc_user_back {
     }
     return $self;
 }
+
+=head3 C<on_notice>
+
+Called when the bot has received a notice. The parameters passed to the
+handlers are:
+
+=over
+
+=item C<nick>
+
+Nickname of the user who sent the notice.
+
+=item C<mask>
+
+The hostmask for that user.
+
+=item C<body>
+
+The body of the notice.
+
+=item C<targets>
+
+An array reference of the nicknames to whom and/or channels to which the the
+notice was sent.
+
+=back
+
+=cut
 
 sub _irc_notice {
     my ($self, $who, $targets, $body) = @_[OBJECT, ARG0..ARG2];
@@ -1008,12 +1633,14 @@ sub _irc_notice {
 # the server can tell us what it thinks the time is. We use this as
 # a work-around for the 'broken' behaviour of freenode (it doesn't send
 # ping messages)
+# Not passed to handlers.
 sub _get_time {
     my ($self, $kernel) = @_[OBJECT, KERNEL];
     $kernel->post( $self->_poe_name => 'time' );
     return $self;
 }
 
+# Not passed to handlers.
 sub _irc_391 {
     my ($self, $kernel) = @_[OBJECT, KERNEL];
     $kernel->delay( reconnect => $self->reconnect_in );
@@ -1021,12 +1648,28 @@ sub _irc_391 {
     return $self;
 }
 
+# Not passed to handlers.
 sub _tick {
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
     my $delay = $self->tick_in;
     $kernel->delay( tick => $delay ) if $delay;
     return $self;
 }
+
+=head3 C<on_shutdown>
+
+Called when the bot has been asked to shut down. The parameters passed to the
+handlers are:
+
+=over
+
+=item C<requestor>
+
+The session ID of the POE component that requested the shutdown.
+
+=back
+
+=cut
 
 sub _irc_shutdown {
     my $self = $_[OBJECT];
