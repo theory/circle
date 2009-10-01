@@ -409,6 +409,19 @@ sub yield {
     $self->irc_client->yield( $to => $self->_encode( @_ ) );
 }
 
+=head3 C<config_for>
+
+  my $config = $bot->config_for('dbi');
+
+Returns the subset of C<config> found under the key passed  to the method.
+
+=cut
+
+sub config_for {
+    my $self = shift;
+    $self->config->{+shift};
+}
+
 =head2 Instance Accessors
 
 =head3 C<real_name>

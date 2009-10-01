@@ -5,11 +5,10 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 48;
-#use Test::More 'no_plan';
+use Test::More tests => 51;
+use Test::More 'no_plan';
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
-use YAML::Syck;
 
 my $CLASS;
 BEGIN {
@@ -80,6 +79,7 @@ isa_ok $bot->handlers->[0], 'App::Circle::Bot::Handler::Print';
 
 ##############################################################################
 # Test custom attributes.
+my $config = { dbi => { dsn => 'dbi:Pg:dbname=foo' }, log => { dir => 'log' } };
 ok $bot = $CLASS->new(
     real_name    => 'Larry Wall',
     no_run       => 1,
@@ -99,6 +99,7 @@ ok $bot = $CLASS->new(
     encoding     => 'latin-1',
     handlers     => [qw(Print Log)],
     tick_in      => 12,
+    config       => $config,
 ), 'Construct a custom bot';
 
 is $bot->real_name,    'Larry Wall',   'real_name should be set';
@@ -119,6 +120,9 @@ is $bot->tick_in,      12,             'tick_in should be set';
 is_deeply $bot->channels,     [qw(perl parrot)],      'channels should be set';
 is_deeply $bot->alt_nicks,    [qw(larry wallnut)],    'alt_nicks should be set';
 is_deeply $bot->ignore_nicks, [qw(Damian chromatic)], 'ignore_nicks should be set';
+is_deeply $bot->config,       $config,                'config should be set';
+is_deeply $bot->config_for('dbi'), $config->{dbi},    'config_for(log) should work';
+is_deeply $bot->config_for('log'), $config->{log},    'config_for(dbi) should work';
 
 is @{ $bot->handlers }, 2, 'Should have one two handlers';
 isa_ok $bot->handlers->[0], 'App::Circle::Bot::Handler::Print';
