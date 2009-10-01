@@ -54,7 +54,7 @@ CREATE OR REPLACE FUNCTION add_event(
 ) RETURNS BOOLEAN LANGUAGE SQL AS $$
     SELECT check_references($1, $2, ARRAY[$3, $5]);
     INSERT INTO events ( host, channel, nick, event, target, body )
-    VALUES ( $1, $2, $3, $4, $5, $6 )
+    VALUES ( $1, $2, $3, $4, $5, COALESCE($6, '') )
     RETURNING TRUE;
 $$;
 
@@ -70,7 +70,7 @@ CREATE OR REPLACE FUNCTION add_event(
       FROM generate_series(array_lower($2, 1), array_upper($2, 1)) s(i);
 
     INSERT INTO events ( host, channel, nick, event, target, body )
-    SELECT $1, $2[i], $3, $4, $5, $6
+    SELECT $1, $2[i], $3, $4, $5, COALESCE($6, '')
       FROM generate_series(array_lower($2, 1), array_upper($2, 1)) s(i)
      ORDER BY i;
 

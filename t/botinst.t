@@ -6,7 +6,7 @@ use feature ':5.10';
 use utf8;
 
 use Test::More tests => 51;
-use Test::More 'no_plan';
+#use Test::More 'no_plan';
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
 

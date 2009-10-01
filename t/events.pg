@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 84 );
+SELECT plan( 88 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -194,34 +194,34 @@ PREPARE expect AS
 PREPARE seen_at_ok AS
 SELECT cmp_ok(
     seen_at, '<', clock_timestamp(),
-    'Message ' || $1 || ' should have been seen before now'
+    'Event ' || $1 || ' should have been seen before now'
 )
   FROM events
  WHERE id = $1::bigint
 UNION
 SELECT cmp_ok(
     seen_at, '>', NOW(),
-    'Message ' || $1 || ' should have been seen since the txn start time'
+    'Event ' || $1 || ' should have been seen since the txn start time'
 )
   FROM events
  WHERE id = $1::bigint;
 
--- Add a message for a known host, channel, and user.
+-- Add a event for a known host, channel, and user.
 ALTER SEQUENCE events_id_seq RESTART 1;
 SELECT is(
     add_event('irc.pgtap.org', 'pgtap', 'theory', 'public', NULL, 'hello' ),
     true,
-    'Should be able to add a message'
+    'Should be able to add a event'
 );
 
 SELECT results_eq(
     'EXECUTE fetch_msg(1)',
     $$EXECUTE expect('irc.pgtap.org', 'pgtap', 'theory', 'public', NULL, 'hello', false )$$,
-    'The message should have been inserted'
+    'The event should have been inserted'
 );
 EXECUTE seen_at_ok(1);
 
--- Add another message for a different user.
+-- Add another event for a different user.
 SELECT ok(
     NOT EXISTS( SELECT name FROM nicks WHERE name = 'josh' AND host = 'irc.pgtap.org' ),
     'Should not have josh on the pgtap host'
@@ -229,7 +229,7 @@ SELECT ok(
 SELECT is(
     add_event('irc.pgtap.org', 'pgtap', 'josh', 'public', 'theory', 'theory: sup?' ),
     true,
-    'Should be able to add a new message'
+    'Should be able to add a new event'
 );
 
 SELECT is( name, 'josh', 'Should now have josh on the pgtap host' )
@@ -250,7 +250,7 @@ SELECT ok(
 SELECT is(
     add_event('irc.pgtap.org', 'perl', 'josh', 'emote', NULL, 'smiles' ),
     true,
-    'Should be able to add message with different channel and event'
+    'Should be able to add event with different channel and event'
 );
 
 SELECT is( name, 'perl', 'Should now have perl channel on the pgtap host' )
@@ -272,7 +272,7 @@ SELECT ok(
 SELECT is(
     add_event('irc.ruby.org', 'ruby', 'mroch', 'join', NULL, '' ),
     true,
-    'Should be able to add message on a new host'
+    'Should be able to add event on a new host'
 );
 
 SELECT is( name, 'irc.ruby.org', 'Should now have ruby host' )
@@ -285,7 +285,7 @@ SELECT is( name, 'theory', 'Should now have theory on ruby host' )
 SELECT results_eq(
     'EXECUTE fetch_msg(4)',
     $$EXECUTE expect('irc.ruby.org', 'ruby', 'mroch', 'join', NULL, '', false )$$,
-    'The new host message should have been inserted'
+    'The new host event should have been inserted'
 );
 EXECUTE seen_at_ok(4);
 
@@ -293,7 +293,7 @@ EXECUTE seen_at_ok(4);
 SELECT is(
     add_event('irc.ruby.org', NULL, 'mroch', 'private', 'circle', 'yo' ),
     true,
-    'Should be able to add message with NULL channel'
+    'Should be able to add event with NULL channel'
 );
 SELECT results_eq(
     'EXECUTE fetch_msg(5)',
@@ -301,6 +301,19 @@ SELECT results_eq(
     'The new channeless event should have been logged'
 );
 EXECUTE seen_at_ok(5);
+
+-- Try NULL body.
+SELECT is(
+    add_event('irc.ruby.org', 'pgtap', 'mroch', 'private', 'circle', NULL ),
+    true,
+    'Should be able to add event with NULL body'
+);
+SELECT results_eq(
+    'EXECUTE fetch_msg(6)',
+    $$EXECUTE expect('irc.ruby.org', 'pgtap', 'mroch', 'private', 'circle', '', false )$$,
+    'The new event should have a blank body'
+);
+EXECUTE seen_at_ok(6);
 
 /****************************************************************************/
 -- What does the add_event() function with an array of channels look like?
@@ -320,19 +333,19 @@ SELECT is(
 );
 
 SELECT results_eq(
-    'EXECUTE fetch_msg(6)',
+    'EXECUTE fetch_msg(7)',
     $$EXECUTE expect('irc.ruby.org', 'ruby', 'mroch', 'part', NULL, '', false )$$,
     'Nick should have parted the ruby channel'
 );
 
 SELECT results_eq(
-    'EXECUTE fetch_msg(7)',
+    'EXECUTE fetch_msg(8)',
     $$EXECUTE expect('irc.ruby.org', 'perl', 'mroch', 'part', NULL, '', false )$$,
     'Nick should have parted the perl channel'
 );
 
 SELECT results_eq(
-    'EXECUTE fetch_msg(8)',
+    'EXECUTE fetch_msg(9)',
     $$EXECUTE expect('irc.ruby.org', 'ponies', 'mroch', 'part', NULL, '', false )$$,
     'Nick should have parted the ponies channel'
 );
