@@ -12,7 +12,6 @@ CREATE TYPE IRC_EVENT AS ENUM (
     'cnotice',    -- Unimplemented: 441
     'connect',
     'disconnect',
-    'emote',
     'error',
     'gline',      -- Unimplemented: 280-281
     'helpop',     -- Unimplemented: 290-294
@@ -76,6 +75,7 @@ CREATE TABLE events (
     target   CITEXT          NULL,
     tsv      tsvector    NOT NULL,
     seen_at  TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp(),
+    is_emote BOOLEAN     NOT NULL DEFAULT FALSE,
     is_spam  BOOLEAN     NOT NULL DEFAULT FALSE,
     FOREIGN KEY (channel, host) REFERENCES channels(name, host)
             ON DELETE CASCADE  ON UPDATE CASCADE,
@@ -85,12 +85,12 @@ CREATE TABLE events (
             ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-
 -- XXX Stuff to delete once the migration is finished.
-INSERT INTO events (host, channel, nick, event, body, tsv, seen_at, is_spam)
+INSERT INTO events (host, channel, nick, event, body, tsv, seen_at, is_spam, is_emote)
 SELECT server, channel, nick,
-       CASE command WHEN 'say' THEN 'public' ELSE command::text::irc_event END,
-       body, tsv, seen_at, is_spam
+       CASE WHEN command in ('say', 'emote') THEN 'public' ELSE command::text::irc_event END,
+       body, tsv, seen_at, is_spam,
+       CASE COMMAND when 'emote' THEN TRUE ELSE FALSE END
   FROM messages;
 
 DROP TABLE messages;

@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 127 );
+SELECT plan( 132 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -100,7 +100,6 @@ SELECT enum_has_labels( 'public', 'irc_event', ARRAY[
     'cnotice',
     'connect',
     'disconnect',
-    'emote',
     'error',
     'gline',
     'helpop',
@@ -270,6 +269,12 @@ SELECT col_type_is( 'events', 'seen_at', 'timestamp with time zone' );
 SELECT col_not_null( 'events', 'seen_at' );
 SELECT col_has_default( 'events', 'seen_at' );
 SELECT col_default_is( 'events', 'seen_at', 'clock_timestamp()' );
+
+SELECT has_column( 'events', 'is_emote' );
+SELECT col_type_is( 'events', 'is_emote', 'boolean' );
+SELECT col_not_null( 'events', 'is_emote' );
+SELECT col_has_default( 'events', 'is_emote' );
+SELECT col_default_is( 'events', 'is_emote', 'false' );
 
 SELECT has_column( 'events', 'is_spam' );
 SELECT col_type_is( 'events', 'is_spam', 'boolean' );

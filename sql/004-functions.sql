@@ -50,11 +50,12 @@ CREATE OR REPLACE FUNCTION add_event(
     a_nick     CITEXT,
     a_event    IRC_EVENT,
     a_target   CITEXT,
-    a_body     TEXT
+    a_body     TEXT,
+    a_emote    BOOLEAN
 ) RETURNS BOOLEAN LANGUAGE SQL AS $$
     SELECT check_references($1, $2, ARRAY[$3, $5]);
-    INSERT INTO events ( host, channel, nick, event, target, body )
-    VALUES ( $1, $2, $3, $4, $5, COALESCE($6, '') )
+    INSERT INTO events ( host, channel, nick, event, target, body, is_emote )
+    VALUES ( $1, $2, $3, $4, $5, COALESCE($6, ''), COALESCE($7, FALSE))
     RETURNING TRUE;
 $$;
 
@@ -64,13 +65,14 @@ CREATE OR REPLACE FUNCTION add_event(
     a_nick     CITEXT,
     a_event    IRC_EVENT,
     a_target   CITEXT,
-    a_body     TEXT
+    a_body     TEXT,
+    a_emote    BOOLEAN
 ) RETURNS BOOLEAN LANGUAGE SQL AS $$
     SELECT check_references($1, $2[i], ARRAY[$3, $5])
       FROM generate_series(array_lower($2, 1), array_upper($2, 1)) s(i);
 
-    INSERT INTO events ( host, channel, nick, event, target, body )
-    SELECT $1, $2[i], $3, $4, $5, COALESCE($6, '')
+    INSERT INTO events ( host, channel, nick, event, target, body, is_emote )
+    SELECT $1, $2[i], $3, $4, $5, COALESCE($6, ''), COALESCE($7, FALSE)
       FROM generate_series(array_lower($2, 1), array_upper($2, 1)) s(i)
      ORDER BY i;
 

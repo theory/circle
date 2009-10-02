@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan( 88 );
+SELECT plan( 96 );
 --SELECT * FROM no_plan();
 
 /****************************************************************************/
@@ -176,7 +176,7 @@ SELECT is( name, 'quinn', 'Should now have quinn on the pgtap host' )
 -- What does the add_event() function look like?
 SELECT has_function(
     'public', 'add_event',
-    ARRAY['citext', 'citext', 'citext', 'irc_event', 'citext', 'text']
+    ARRAY['citext', 'citext', 'citext', 'irc_event', 'citext', 'text', 'boolean']
 );
 SELECT function_lang_is( 'add_event', 'sql' );
 SELECT function_returns( 'add_event', 'boolean' );
@@ -184,7 +184,7 @@ SELECT volatility_is( 'add_event', 'volatile' );
 
 -- Set up some prepared statements to help with our testing.
 PREPARE fetch_msg AS
- SELECT host, channel, nick, event, target, body, tsv, is_spam
+ SELECT host, channel, nick, event, target, body, tsv, is_emote
    FROM events
   WHERE ID = $1;
 
@@ -209,7 +209,7 @@ SELECT cmp_ok(
 -- Add a event for a known host, channel, and user.
 ALTER SEQUENCE events_id_seq RESTART 1;
 SELECT is(
-    add_event('irc.pgtap.org', 'pgtap', 'theory', 'public', NULL, 'hello' ),
+    add_event('irc.pgtap.org', 'pgtap', 'theory', 'public', NULL, 'hello', NULL ),
     true,
     'Should be able to add a event'
 );
@@ -227,7 +227,7 @@ SELECT ok(
     'Should not have josh on the pgtap host'
 );
 SELECT is(
-    add_event('irc.pgtap.org', 'pgtap', 'josh', 'public', 'theory', 'theory: sup?' ),
+    add_event('irc.pgtap.org', 'pgtap', 'josh', 'public', 'theory', 'theory: sup?', NULL ),
     true,
     'Should be able to add a new event'
 );
@@ -248,7 +248,7 @@ SELECT ok(
     'Should not have perl channel on the pgtap host'
 );
 SELECT is(
-    add_event('irc.pgtap.org', 'perl', 'josh', 'emote', NULL, 'smiles' ),
+    add_event('irc.pgtap.org', 'perl', 'josh', 'part', NULL, 'bye', NULL ),
     true,
     'Should be able to add event with different channel and event'
 );
@@ -258,7 +258,7 @@ SELECT is( name, 'perl', 'Should now have perl channel on the pgtap host' )
 
 SELECT results_eq(
     'EXECUTE fetch_msg(3)',
-    $$EXECUTE expect('irc.pgtap.org', 'perl', 'josh', 'emote', NULL, 'smiles', false )$$,
+    $$EXECUTE expect('irc.pgtap.org', 'perl', 'josh', 'part', NULL, 'bye', false )$$,
     'The new mssage should have been inserted'
 );
 EXECUTE seen_at_ok(3);
@@ -270,7 +270,7 @@ SELECT ok(
 );
 
 SELECT is(
-    add_event('irc.ruby.org', 'ruby', 'mroch', 'join', NULL, '' ),
+    add_event('irc.ruby.org', 'ruby', 'mroch', 'join', NULL, '', NULL ),
     true,
     'Should be able to add event on a new host'
 );
@@ -291,7 +291,7 @@ EXECUTE seen_at_ok(4);
 
 -- Try NULL channel.
 SELECT is(
-    add_event('irc.ruby.org', NULL, 'mroch', 'private', 'circle', 'yo' ),
+    add_event('irc.ruby.org', NULL, 'mroch', 'private', 'circle', 'yo', FALSE ),
     true,
     'Should be able to add event with NULL channel'
 );
@@ -304,7 +304,7 @@ EXECUTE seen_at_ok(5);
 
 -- Try NULL body.
 SELECT is(
-    add_event('irc.ruby.org', 'pgtap', 'mroch', 'private', 'circle', NULL ),
+    add_event('irc.ruby.org', 'pgtap', 'mroch', 'private', 'circle', NULL, FALSE ),
     true,
     'Should be able to add event with NULL body'
 );
@@ -315,11 +315,37 @@ SELECT results_eq(
 );
 EXECUTE seen_at_ok(6);
 
+-- Try emote.
+SELECT is(
+    add_event('irc.ruby.org', 'pgtap', 'mroch', 'public', NULL, 'smiles', true ),
+    true,
+    'Should be able to add emote public message event'
+);
+SELECT results_eq(
+    'EXECUTE fetch_msg(7)',
+    $$EXECUTE expect('irc.ruby.org', 'pgtap', 'mroch', 'public', NULL, 'smiles', true )$$,
+    'The public event should have is_emote true'
+);
+EXECUTE seen_at_ok(7);
+
+-- Try private emote.
+SELECT is(
+    add_event('irc.ruby.org', NULL, 'mroch', 'private', NULL, 'smiles', true ),
+    true,
+    'Should be able to add emote private message event'
+);
+SELECT results_eq(
+    'EXECUTE fetch_msg(8)',
+    $$EXECUTE expect('irc.ruby.org', NULL, 'mroch', 'private', NULL, 'smiles', true )$$,
+    'The private event should have is_emote true'
+);
+EXECUTE seen_at_ok(8);
+
 /****************************************************************************/
 -- What does the add_event() function with an array of channels look like?
 SELECT has_function(
     'public', 'add_event',
-    ARRAY['citext', 'citext[]', 'citext', 'irc_event', 'citext', 'text']
+    ARRAY['citext', 'citext[]', 'citext', 'irc_event', 'citext', 'text', 'boolean']
 );
 SELECT function_lang_is( 'add_event', 'sql' );
 SELECT function_returns( 'add_event', 'boolean' );
@@ -327,25 +353,25 @@ SELECT volatility_is( 'add_event', 'volatile' );
 
 -- Use it to insert a few records at once.
 SELECT is(
-    add_event('irc.ruby.org', ARRAY['ruby', 'perl', 'ponies']::citext[], 'mroch', 'part', NULL, '' ),
+    add_event('irc.ruby.org', ARRAY['ruby', 'perl', 'ponies']::citext[], 'mroch', 'part', NULL, '', FALSE ),
     true,
     'Should be able to pass array of channels to add_event()'
 );
 
 SELECT results_eq(
-    'EXECUTE fetch_msg(7)',
+    'EXECUTE fetch_msg(9)',
     $$EXECUTE expect('irc.ruby.org', 'ruby', 'mroch', 'part', NULL, '', false )$$,
     'Nick should have parted the ruby channel'
 );
 
 SELECT results_eq(
-    'EXECUTE fetch_msg(8)',
+    'EXECUTE fetch_msg(10)',
     $$EXECUTE expect('irc.ruby.org', 'perl', 'mroch', 'part', NULL, '', false )$$,
     'Nick should have parted the perl channel'
 );
 
 SELECT results_eq(
-    'EXECUTE fetch_msg(9)',
+    'EXECUTE fetch_msg(11)',
     $$EXECUTE expect('irc.ruby.org', 'ponies', 'mroch', 'part', NULL, '', false )$$,
     'Nick should have parted the ponies channel'
 );

@@ -263,6 +263,7 @@ sub new {
         nickname     => 'circlebot',
         host         => 'localhost',
         port         => 6667,
+        config       => {},
         @_,
     } => $class;
 
@@ -740,6 +741,11 @@ set to the nick of that someone. For example, a message that says, "bob: hi",
 the C<to> parameter will be set to "bob" if "bob" is on the channel at the
 time the message is received.
 
+=item C<emoted>
+
+If set to a true value, the message was emoted (that is, the user sent it with
+C</me>).
+
 =back
 
 =cut
@@ -768,9 +774,19 @@ Nickname of the user who sent the message.
 
 The hostmask for that user.
 
+=item C<to>
+
+Array reference of the nicks of the recipients of the private message. Usually
+this will just be the bot's nickname.
+
 =item C<body>
 
 The body of the message.
+
+=item C<emoted>
+
+If set to a true value, the message was emoted (that is, the user sent it with
+C</me>).
 
 =back
 
@@ -779,45 +795,26 @@ The body of the message.
 sub _irc_msg {
     my $self = shift;
     my %msg = $self->_msg(@_);
-    delete $msg{channel};
+    $msg{to} = delete $msg{channel};
     for my $h (@{ $self->handlers }) {
         last if $h->on_private({ %msg });
     }
     return $self;
 }
 
-=head3 C<on_emote>
-
-Called when a public emote message is sent to a channel (CTCP_ACTION). The
-parameters passed are:
-
-=over
-
-=item C<nick>
-
-Nickname of the user who sent the emote message.
-
-=item C<mask>
-
-The hostmask for that user.
-
-=item C<body>
-
-The body of the emote message.
-
-=item C<channel>
-
-The channel to which the emote message was sent.
-
-=back
-
-=cut
-
 sub _irc_emote {
     my $self = shift;
     my %msg = $self->_msg(@_);
-    for my $h (@{ $self->handlers }) {
-        last if $h->on_emote({ %msg });
+    $msg{emoted} = 1;
+    if ($msg{channel} =~ /^#/) {
+        for my $h (@{ $self->handlers }) {
+            last if $h->on_public({ %msg });
+        }
+    } else {
+        $msg{to} = delete $msg{channel};
+        for my $h (@{ $self->handlers }) {
+            last if $h->on_private({ %msg });
+        }
     }
     return $self;
 }
@@ -963,12 +960,16 @@ The hostmask for that user.
 
 The channel that the user parted.
 
+=item C<body>
+
+The parting message, if any.
+
 =back
 
 =cut
 
 sub _irc_part {
-    my ( $self, $kernel, $channel ) = @_[ OBJECT, KERNEL, ARG1 ];
+    my ( $self, $kernel, $channel, $body ) = @_[ OBJECT, KERNEL, ARG1 ];
     my %msg = _msg(@_);
     if ( $self->_decode( $self->irc_client->nick_name ) eq $msg{nick} ) {
         # We've parted the channel. Make a note of it.

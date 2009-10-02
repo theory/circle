@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 161;
+use Test::More tests => 164;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use POE;
@@ -79,8 +79,8 @@ HANDLER: {
     }
 
     for my $event qw(
-           connect disconnect error public private emote join part kick nick
-           quit topic away back names whois whowas shutdown invite mode notice
+           connect disconnect error public private join part kick nick quit
+           topic away back names whois whowas shutdown invite mode notice
            user_mode chan_mode ison
     ) {
         eval qq{sub on_$event \{ \$_[0]->dispatches->{$event} = \$_[1]; \$ret \}};
@@ -277,20 +277,30 @@ is_deeply $h2->clear, undef,
 ##############################################################################
 # Test _irc_emote.
 delete $msg->{to};
+$msg->{emoted} = 1;
 @delay = ( $del );
 ok App::Circle::Bot::_irc_emote(@args), 'Send an emote event';
-is_deeply $h1->clear, { emote => $msg }, 'Handler should have received it';
+is_deeply $h1->clear, { public => $msg }, 'Handler should have received it';
+
+$args[ARG1] = 'circle';
+$args[ARG2] = 'smiles';
+$msg->{body} = 'smiles';
+$msg->{to} = 'circle';
+delete $msg->{channel};
+@delay = ( $del );
+ok App::Circle::Bot::_irc_emote(@args), 'Send a private emote event';
+is_deeply $h1->clear, { private => $msg }, 'Handler should have received it';
 
 ##############################################################################
 # Test _irc_msg.
-delete $msg->{channel};
-delete $msg->{to};
+delete $msg->{emoted};
 @delay = ( $del );
 ok App::Circle::Bot::_irc_msg(@args), 'Send a private event';
 is_deeply $h1->clear, { private => $msg }, 'Handler should have received it';
 
 ##############################################################################
 # Test _irc_ping.
+delete $msg->{to};
 @delay = ( $del );
 ok App::Circle::Bot::_irc_ping(@args), 'Send a ping event';
 is_deeply $h1->clear, undef, 'Should be no handler action';

@@ -50,21 +50,18 @@ sub on_public {
     my ($self, $p) = @_;
     my $op = $self->bot->is_channel_operator($p->{channel}, $p->{nick})
         ? '@' : ' ';
-    say { $self->fh } _t, " <$op$p->{nick}/$p->{channel}> $p->{body}";
+    say { $self->fh } _t, $p->{emoted}
+        ? " * $op$p->{nick}/$p->{channel} $p->{body}"
+        : " <$op$p->{nick}/$p->{channel}> $p->{body}";
     return;
 }
 
 sub on_private {
     my ($self, $p) = @_;
-    (my $who = $p->{mask}) =~ s/^~//;
-    say { $self->fh } _t, " [$p->{nick}($who)] $p->{body}";
+    (my $who  = $p->{mask}) =~ s/^~//;
+    my $emote = $p->{emoted} ? '* ' : '';
+    say { $self->fh } _t, " $emote\[$p->{nick}($who)] $p->{body}";
     # When circle sends a /msg: _t, " [msg/$to_nick] $body";
-    return;
-}
-
-sub on_emote {
-    my ($self, $p) = @_;
-    say { $self->fh } _t, " * $p->{nick}/$p->{channel} $p->{body}";
     return;
 }
 
@@ -249,8 +246,6 @@ The handlers are:
 =item C<on_public>
 
 =item C<on_private>
-
-=item C<on_emote>
 
 =item C<on_join>
 

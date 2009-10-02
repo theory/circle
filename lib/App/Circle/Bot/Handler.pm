@@ -21,7 +21,6 @@ sub on_disconnect { }    # irc_disconnected
 sub on_error      { }    # irc_error, irc_socketerror
 sub on_public     { }    # irc_public
 sub on_private    { }    # irc_msg
-sub on_emote      { }    # irc_ctcp_action
 sub on_join       { }    # irc_join
 sub on_part       { }    # irc_part
 sub on_kick       { }    # irc_kick
@@ -85,8 +84,6 @@ The handlers are:
 =item C<on_public>
 
 =item C<on_private>
-
-=item C<on_emote>
 
 =item C<on_join>
 

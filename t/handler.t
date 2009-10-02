@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 27;
+use Test::More tests => 26;
 #use Test::More 'no_plan';
 
 my $CLASS;
@@ -20,7 +20,6 @@ my @meths = qw(
     on_error
     on_public
     on_private
-    on_emote
     on_join
     on_part
     on_kick

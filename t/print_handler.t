@@ -3,9 +3,9 @@
 use strict;
 use warnings;
 use feature ':5.10';
-#use utf8;
+use utf8;
 
-use Test::More tests => 70;
+use Test::More tests => 72;
 #use Test::More 'no_plan';
 use Test::MockModule;
 
@@ -23,7 +23,6 @@ can_ok $CLASS, qw(
     on_error
     on_public
     on_private
-    on_emote
     on_join
     on_part
     on_kick
@@ -75,9 +74,9 @@ BEGIN {
 
 is App::Circle::Bot::Handler::Print::_t, $time, '_t should work';
 
-ok my $h = App::Circle::Bot::Handler::Print->new( fh => $fh, bot => $bot ),
+ok my $h = $CLASS->new( fh => $fh, bot => $bot ),
     'Construct a new print handler';
-isa_ok $h, 'App::Circle::Bot::Handler::Print';
+isa_ok $h, $CLASS;
 isa_ok $h, 'App::Circle::Bot::Handler';
 is $h->fh, $fh, 'The file handle should be set';
 
@@ -113,18 +112,29 @@ $is_op = 1;
 ok !$h->on_public({ %msg, to => 'bob' }), 'on_public should return false again';
 is output, "$time <\@fred/#perl> Howdy\n", 'on_public should output op message';
 
+# on_public emote
+$msg{body}   = 'smiles';
+$msg{emoted} = 1;
+ok !$h->on_public({ %msg }), 'on_public emote should return false';
+is output, "$time * \@fred/#perl smiles\n", 'on_public should output emote message';
+
 # on_private
 delete $msg{channel};
+delete $msg{emoted};
+$msg{to}   = 'circle';
+$msg{body} = 'Howdy';
 ok !$h->on_private({ %msg }), 'on_private should return false';
 is output, "$time \[fred(bknight\@example.com)] Howdy\n", 'on_private should output message';
 
-# on_emote
-$msg{channel} = '#pgtap';
-$msg{body}    = 'smiles';
-ok !$h->on_emote({ %msg }), 'on_emote should return false';
-is output, "$time * fred/#pgtap smiles\n", 'on_emote should output message';
+# on_private emote
+$msg{body}   = 'smiles';
+$msg{emoted} = 1;
+ok !$h->on_private({ %msg }), 'on_private emote should return false';
+is output, "$time * [fred(bknight\@example.com)] smiles\n", 'on_private should output message';
 
 # on_join
+delete $msg{to};
+$msg{channel} = '#pgtap';
 $msg{body} = undef;
 ok !$h->on_join({ %msg }), 'on_join should return false';
 is output, "$time -!- fred \[~bknight\@example.com] has joined #pgtap\n",
