@@ -11,7 +11,7 @@ use POE::Kernel;
 use POE::Session;
 use POE::Wheel::Run;
 use POE::Filter::Line;
-use Poe::Component::IRC::State;
+use POE::Component::IRC::State;
 use Unicode::Normalize 'NFC';
 use Class::XSAccessor accessors => {
     map { $_ => $_ } qw(
