@@ -1,6 +1,13 @@
 This file documents the revision history for Perl extension App::Circle.
 
-0.02
+0.02  2009-10-03T06:57:22
+      - Abandoned Bot::BasicBot in favor of a new implementation that supports
+        a chain of callback handlers.
+      - Changed database from logging "messages" to logging "events".
+      - Now logging a lot more events.
+      - Dumped Model::DBI; will use DBIx::Connection.
+      - Lots of other stuff it's not worth going into since no one else is
+        using Circle yet.
 
 0.01  2009-09-15T22:58:07
       - initial version, deployed for PGX.
