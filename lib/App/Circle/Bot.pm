@@ -280,7 +280,6 @@ sub new {
     $self->alt_nicks([])                          unless $self->alt_nicks;
     $self->handlers(['Print'])                    unless $self->handlers;
 
-
     for my $handler (@{ $self->handlers }) {
         $handler = __PACKAGE__ . "::Handler::$handler" unless $handler =~ /::/;
         eval "require $handler" or die $@;
@@ -1790,6 +1789,14 @@ __END__
 =head1 To Do
 
 =over
+
+=item *
+
+Add constraint such that channels always start with "#".
+
+=item *
+
+Map channels to networks instead of hosts.
 
 =item *
 

@@ -48,7 +48,7 @@ sub on_error {
 
 sub on_public {
     my ($self, $p) = @_;
-    my $op = $self->bot->is_channel_operator($p->{channel}, $p->{nick})
+    my $op = $self->bot->irc_client->is_channel_operator($p->{channel}, $p->{nick})
         ? '@' : ' ';
     say { $self->fh } _t, $p->{emoted}
         ? " * $op$p->{nick}/$p->{channel} $p->{body}"
@@ -105,13 +105,15 @@ sub on_quit {
 sub on_away {
     my ($self, $p) = @_;
     my $body = defined $p->{body} ? " [$p->{body}]" : '';
-    say { $self->fh } _t, " -!- $p->{nick} [$p->{mask}] is away$body";
+    my $mask = defined $p->{mask} ? " [$p->{mask}]" : '';
+    say { $self->fh } _t, " -!- $p->{nick}$mask is away$body";
     return;
 }
 
 sub on_back {
     my ($self, $p) = @_;
-    say { $self->fh } _t, " -!- $p->{nick} [$p->{mask}] is back";
+    my $mask = defined $p->{mask} ? " [$p->{mask}]" : '';
+    say { $self->fh } _t, " -!- $p->{nick}$mask is back";
     return;
 }
 

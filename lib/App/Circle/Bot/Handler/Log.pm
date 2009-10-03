@@ -58,7 +58,8 @@ sub on_connect {
 
 sub on_disconnect {
     my ($self, $p) = @_;
-    $self->_add_event( 'disconnect', $p->{channels}, $p->{nick} );
+    $self->_add_event( 'disconnect', $p->{channels}, $p->{nick} )
+        if $p->{channels} && $p->{nick};
 }
 
 sub on_error {

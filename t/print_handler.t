@@ -45,12 +45,12 @@ can_ok $CLASS, qw(
 my $bot = App::Circle::Bot->new(host => 'localhost');
 my $bmock = Test::MockModule->new('App::Circle::Bot');
 my $is_op;
-$bmock->mock(is_channel_operator => sub { $is_op });
 
 my $irc = bless {} => 'POE::Component::IRC::State';
 my $imock = Test::MockModule->new('POE::Component::IRC::State');
 my $nickname = '';
 $imock->mock( nick_name => sub { $nickname });
+$imock->mock(is_channel_operator => sub { $is_op });
 $bot->irc_client($irc);
 
 # Output sent to the file handle will be encoded to UTF-8, so we need
