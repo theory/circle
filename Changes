@@ -1,5 +1,7 @@
 This file documents the revision history for Perl extension App::Circle.
 
+0.03
+
 0.02  2009-10-03T06:57:22
       - Abandoned Bot::BasicBot in favor of a new implementation that supports
         a chain of callback handlers.

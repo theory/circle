@@ -1,4 +1,4 @@
-Circle version 0.02
+Circle version 0.03
 ===================
 
 Circle is an IRC logging application. More will be said when it actually
