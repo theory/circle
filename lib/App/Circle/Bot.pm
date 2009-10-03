@@ -1779,7 +1779,7 @@ sub _encode {
 
 sub _random_nick {
     my @things = ( 'a' .. 'z' );
-    return CORE::join( '', ( map { @things[ rand @things ] } 0 .. 4 ), 'bot' );
+    return join( '', ( map { @things[ rand @things ] } 0 .. 4 ), 'bot' );
 }
 
 1;
@@ -1800,6 +1800,10 @@ Map channels to networks instead of hosts.
 
 =item *
 
+Add a "help" command to the core bot.
+
+=item *
+
 Add some command to get circle to ignore an event. For example, a user should
 be able to type:
 
@@ -1813,13 +1817,11 @@ Add convenience event methods?
 
 =over
 
-=item * C<< $bot->say( $channel, $whatever ); >>
+=item * C<< $bot->say( $channel, $whatever, $emote ); >>
 
 =item * C<< $bot->reply( $channel, $nick, $whatever ); >>
 
-=item * C<< $bot->msg( $nick, $whatever ); >>
-
-=item * C<< $bot->emote( $channel, $whatever ); >>
+=item * C<< $bot->msg( $nick, $whatever, $emote ); >>
 
 =item * C<< $bot->away( $message ); >>
 
