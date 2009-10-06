@@ -30,7 +30,7 @@ Module::Build::DB->new(
         'Class::XSAccessor'                 => '1.03',
         'DBD::Pg'                           => '2.15.1',
         'DBI'                               => '1.608',
-        'DBIx::Connection'                  => '0.10',
+        'DBIx::Connector'                   => '0.11',
         'Encode'                            => '2.12',
         'Encode::Detect::Detector'          => '1.01',
         'Exception::Class::DBI'             => '1.00',

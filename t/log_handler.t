@@ -65,7 +65,7 @@ isa_ok $log, 'App::Circle::Bot::Handler';
 is $log->bot, $bot, 'The bot should be set';
 
 # Make sure that things are set up.
-isa_ok $log->conn, 'DBIx::Connection', 'Connection attribute';
+isa_ok $log->conn, 'DBIx::Connector', 'Connection attribute';
 isa_ok my $dbh = $log->conn->dbh, 'DBI::db', 'The DBH';
 ok $log->conn->connected, 'We should be connected to the database';
 

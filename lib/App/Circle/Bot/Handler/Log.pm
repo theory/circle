@@ -7,7 +7,7 @@ use utf8;
 
 use DBI;
 use DBD::Pg;
-use DBIx::Connection;
+use DBIx::Connector;
 use Exception::Class::DBI;
 use Class::XSAccessor accessors => { map { $_ => $_ } qw(
    conn
@@ -22,7 +22,7 @@ sub new {
     my $dbi = $self->bot->config_for('dbi')
         or die qq{Missing required "dbi" configuration\n};
     $self->conn(
-        DBIx::Connection->new(@{ $dbi }{qw(dsn username password)}, {
+        DBIx::Connector->new(@{ $dbi }{qw(dsn username password)}, {
             PrintError     => 0,
             RaiseError     => 0,
             HandleError    => Exception::Class::DBI->handler,

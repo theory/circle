@@ -1,6 +1,7 @@
 This file documents the revision history for Perl extension App::Circle.
 
 0.03
+      - Updated use of DBIx::Connection to to its new name: DBIx::Connector.
 
 0.02  2009-10-03T06:57:22
       - Abandoned Bot::BasicBot in favor of a new implementation that supports
