@@ -38,7 +38,7 @@ sub _add_event {
     my $cast = ref $channel ? '::citext[]' : '';
 
     # Let the database do all the work.
-    $self->conn->do(sub {
+    $self->conn->run( fixup => sub {
         shift->do(
             "SELECT add_event(?, ?$cast, ?, ?, ?, ?, ?)",
             undef,

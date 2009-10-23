@@ -81,7 +81,7 @@ isa_ok $dbh->{HandleError}, 'CODE', 'The error handler';
 #############################################################################
 # Have the bot do some logging, yay!
 $dbh->begin_work;
-END { $dbh->rollback if $dbh }
+END { $dbh->rollback if $dbh && not $dbh->{AutoCommit} }
 
 $dbh->do('ALTER SEQUENCE events_id_seq RESTART 1');
 ok !$log->_add_event('public', '#perl', 'theory', 'hello'),
