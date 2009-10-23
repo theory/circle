@@ -65,7 +65,7 @@ isa_ok $log, 'App::Circle::Bot::Handler';
 is $log->bot, $bot, 'The bot should be set';
 
 # Make sure that things are set up.
-isa_ok $log->conn, 'DBIx::Connector', 'Connection attribute';
+isa_ok my $conn = $log->conn, 'DBIx::Connector', 'Connection attribute';
 isa_ok my $dbh = $log->conn->dbh, 'DBI::db', 'The DBH';
 ok $log->conn->connected, 'We should be connected to the database';
 
@@ -81,7 +81,9 @@ isa_ok $dbh->{HandleError}, 'CODE', 'The error handler';
 #############################################################################
 # Have the bot do some logging, yay!
 $dbh->begin_work;
-END { $dbh->rollback if $dbh && not $dbh->{AutoCommit} }
+# $conn will rollback on DESTROY, but we make it explicit here so that it's
+# obvious what's going on.
+END { $conn->dbh->rollback if $conn->dbh }
 
 $dbh->do('ALTER SEQUENCE events_id_seq RESTART 1');
 ok !$log->_add_event('public', '#perl', 'theory', 'hello'),
