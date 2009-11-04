@@ -17,6 +17,7 @@ Module::Build::DB->new(
         'Module::Build::DB' => '0.10',
         'Test::MockModule'  => '0.05',
         'Test::More'        => '0.70',
+        'Test::Harness'     => '3.18',
     },
     requires           => {
         'aliased'                           => '0.30',
@@ -46,6 +47,16 @@ Module::Build::DB->new(
         'POE::Component::SSLify' => '0.15',
         'Test::Pod'              => '1.20',
         'Test::Pod::Coverage'    => '1.06',
+    },
+    tap_harness_args => {
+        sources => {
+            Perl  => undef,
+            pgTAP => {
+                dbname   => 'circle_test',
+                username => 'postgres',
+                suffix   => '.pg',
+            },
+        },
     },
     meta_merge         => {
         resources => {
