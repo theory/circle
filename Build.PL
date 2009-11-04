@@ -9,7 +9,11 @@ Module::Build::DB->new(
     test_file_exts     => [qw(.t .pg)],
     db_config_key      => 'dbi',
     db_client          => 'psql',
-    test_env           => { PGOPTIONS => '--search_path=tap,public,contrib' },
+    test_env           => {
+        PGOPTIONS       => '--search_path=tap,public,contrib',
+        CATALYST_DEBUG  => 0,
+        CATALYST_CONFIG => 'conf/test.yml',
+    },
     configure_requires => {
         'Module::Build::DB' => '0.10',
     },
