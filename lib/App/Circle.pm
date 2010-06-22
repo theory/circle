@@ -25,7 +25,7 @@ use Catalyst (
     '-Log=warn,fatal,error',
 );
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 # Configure the application.
 #

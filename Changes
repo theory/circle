@@ -1,5 +1,7 @@
 This file documents the revision history for Perl extension App::Circle.
 
+0.04
+
 0.03  2010-06-22T03:44:11
       - Updated use of DBIx::Connection to to its new name: DBIx::Connector.
       - Fixed bug in the `on_error` and `on_disconnect` handlers. Channels
