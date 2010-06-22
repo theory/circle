@@ -316,7 +316,8 @@ $args[ARG1] = { my @nick_info = (
     Real   => 'Larry Wall',
     Server => 'my.example.com',
 )};
-$args[ARG2] = [my @channels = ('#perl', '#parrot')];
+my @channels = ('#perl', '#parrot');
+$args[ARG2] = { map { $_ => 1 } @channels };
 @delay = ( [reconnect => 30 ]);
 ok App::Circle::Bot::_irc_disconnected(@args), 'Send a disconnected event';
 is_deeply $h1->clear, { disconnect => {
@@ -328,7 +329,7 @@ is_deeply $h1->clear, { disconnect => {
 # Test _irc_error.
 $args[ARG0] = 'WTF?';
 $args[ARG1] = { @nick_info };
-$args[ARG2] = [ @channels  ];
+$args[ARG2] = { map { $_ => 1 } @channels };
 @delay      = ( [reconnect => 30 ]);
 ok App::Circle::Bot::_irc_error(@args), 'Send an error event';
 is_deeply $h1->clear, { error => {

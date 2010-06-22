@@ -853,7 +853,7 @@ sub _irc_disconnected {
     $kernel->delay( reconnect => 30 );
 
     my $nick     = $self->_decode( $nick_info->{Nick} );
-    my $channels = $self->_decode( $_[ARG2] );
+    my $channels = [ keys %{ $self->_decode( $_[ARG2] ) } ];
     for my $h (@{ $self->handlers }) {
         last if $h->on_disconnect({ nick => $nick, channels => $channels });
     }
@@ -892,7 +892,7 @@ sub _irc_error {
     $kernel->delay('reconnect', 30);
 
     my $nick     = $self->_decode( $nick_info->{Nick} );
-    my $channels = $self->_decode( $_[ARG2] );
+    my $channels = [ keys %{ $self->_decode( $_[ARG2] ) } ];
     for my $h (@{ $self->handlers }) {
         last if $h->on_error({ nick => $nick, body => _trim $err, channels => $channels });
     }
@@ -1743,6 +1743,8 @@ sub _decode {
                 push @ret, $octets;
             } elsif (ref $octets eq 'ARRAY') {
                 push @ret, [ $self->_decode(@{ $octets }) ];
+            } elsif (ref $octets eq 'HASH') {
+                push @ret, { $self->_decode(%{ $octets }) };
             } else {
                 # Assemble a list of encodings to try.
                 my @try = ($encoding, grep { $_ ne $encoding } qw(utf-8));
