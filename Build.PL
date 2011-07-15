@@ -19,10 +19,11 @@ Module::Build::DB->new(
         'Module::Build::DB' => '0.10',
     },
     build_requires     => {
-        'Module::Build::DB' => '0.10',
-        'Test::MockModule'  => '0.05',
-        'Test::More'        => '0.70',
-        'Test::Harness'     => '3.18',
+        'Module::Build::DB'                 => '0.10',
+        'Test::MockModule'                  => '0.05',
+        'Test::More'                        => '0.70',
+        'Test::Harness'                     => '3.18',
+        'TAP::Parser::SourceHandler::pgTAP' => '3.23',
     },
     requires           => {
         'aliased'                           => '0.30',
@@ -37,6 +38,7 @@ Module::Build::DB->new(
         'DBD::Pg'                           => '2.15.1',
         'DBI'                               => '1.608',
         'DBIx::Connector'                   => '0.20',
+        'Module::Build::DB'                 => '0.10',
         'Encode'                            => '2.12',
         'Encode::Detect::Detector'          => '1.01',
         'Exception::Class::DBI'             => '1.00',
