@@ -200,7 +200,7 @@ SELECT fk_ok(
 );
 
 /****************************************************************************/
--- Validate the nicks table.
+-- Validate the events table.
 SELECT has_table( 'events' );
 SELECT has_pk( 'events' );
 
