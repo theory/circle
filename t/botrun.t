@@ -78,11 +78,11 @@ HANDLER: {
         $ret = shift;
     }
 
-    for my $event qw(
+    for my $event (qw(
            connect disconnect error public private join part kick nick quit
            topic away back names whois whowas shutdown invite mode notice
            user_mode chan_mode ison
-    ) {
+    )) {
         eval qq{sub on_$event \{ \$_[0]->dispatches->{$event} = \$_[1]; \$ret \}};
     }
 }

@@ -11,7 +11,7 @@ Module::Build::DB->new(
     replace_config     => 'conf/dev.yml',
     db_client          => 'psql',
     test_env           => {
-        PGOPTIONS       => '--search_path=tap,public,contrib',
+        PGOPTIONS       => '--search_path=tap,public',
         CATALYST_DEBUG  => 0,
         CATALYST_CONFIG => 'conf/test.yml',
     },

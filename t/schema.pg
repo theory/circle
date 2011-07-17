@@ -11,7 +11,36 @@ SELECT rules_are(      'public', '{}'::NAME[] );
 SELECT functions_are(  'public', ARRAY[
     'check_host',
     'check_references',
-    'add_event'
+    'add_event',
+    'citext',
+    'texticregexeq',
+    'citextin',
+    'citext_le',
+    'citext_smaller',
+    'regexp_split_to_table',
+    'regexp_split_to_array',
+    'citextsend',
+    'citext_gt',
+    'texticregexne',
+    'citext_cmp',
+    'citext_ge',
+    'citextout',
+    'citextrecv',
+    'min',
+    'strpos',
+    'split_part',
+    'translate',
+    'citext_ne',
+    'texticnlike',
+    'citext_larger',
+    'texticlike',
+    'citext_hash',
+    'regexp_replace',
+    'regexp_matches',
+    'max',
+    'citext_eq',
+    'citext_lt',
+    'replace'
 ] );
 
 
@@ -37,7 +66,7 @@ SELECT col_not_null( 'metadata', 'note' );
 SELECT col_hasnt_default( 'metadata', 'note' );
 
 -- Check that the schema is up-to-date.
-SELECT is( value, 4, 'Schema should be up-to-date')
+SELECT is( value, 5, 'Schema should be up-to-date')
   FROM metadata WHERE label = 'schema_version';
 
 /****************************************************************************/
