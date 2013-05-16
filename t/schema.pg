@@ -1,3 +1,7 @@
+SET client_min_messages TO warning;
+CREATE EXTENSION IF NOT EXISTS pgtap;
+RESET client_min_messages;
+
 BEGIN;
 SELECT plan( 132 );
 --SELECT * FROM no_plan();
@@ -8,7 +12,7 @@ SELECT tables_are(     'public', ARRAY[ 'metadata', 'hosts', 'channels', 'nicks'
 SELECT views_are(      'public', '{}'::NAME[] );
 SELECT sequences_are(  'public', ARRAY[ 'events_id_seq' ] );
 SELECT rules_are(      'public', '{}'::NAME[] );
-SELECT functions_are(  'public', ARRAY[
+SELECT can(  'public', ARRAY[
     'check_host',
     'check_references',
     'add_event',
