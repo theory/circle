@@ -7,7 +7,7 @@ use utf8;
 
 use Test::More tests => 97;
 #use Test::More 'no_plan';
-use YAML::Syck;
+use YAML::XS qw(LoadFile);
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
 

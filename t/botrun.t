@@ -739,5 +739,5 @@ $bot->config_file(catfile qw(t multiples.yml));
 );
 App::Circle::Bot::sig_hup(@args);
 pass( 'Two channels should be joined for sig_hup with new config');
-is_deeply $bot->channels, [qw(#perl #postgresql #dbi)],
+is_deeply $bot->channels, ['#perl', '#postgresql', '#dbi'],
     'Should now have the correct three channels';

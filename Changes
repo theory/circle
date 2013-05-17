@@ -13,6 +13,7 @@ This file documents the revision history for Perl extension App::Circle.
         re-read the configuration file and `part` and `join` channels as
         appropriate. This makes it easy to change the channels circle is on
         without restarting.
+      - Switchef from YAML::Syck to YAML::XS, as the former is deprecated.
 
 0.03  2010-06-22T03:44:11
       - Updated use of DBIx::Connection to to its new name: DBIx::Connector.
