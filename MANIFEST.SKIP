@@ -28,7 +28,8 @@
 # Avoid build files.
 ^App-Circle
 
-# Avoid spelling test.
-pod-spelling.t$
+# Avoid Pod tests.
+t/\d*pod[^.]*\.t
+
 ^MYMETA.yml$
 ^MYMETA\.json$
