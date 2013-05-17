@@ -2,9 +2,9 @@ Circle version 0.04
 ===================
 
 Circle is an IRC logging application. More will be said when it actually
-works. At first it will just do logging. Then I'll add a Catalyst-driven UI
-for looking at and searching the logs. Then I'll think about securty,
-factoids, and perhaps a pastebot. Stay tuned
+works. At first it will just do logging. Then I'll add a web UI for looking at
+and searching the logs. Then I'll think about securty, factoids, and perhaps a
+pastebot. Stay tuned
 
 INSTALLATION
 

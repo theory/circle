@@ -139,12 +139,15 @@ $irc->mock( yield => sub {
     is_deeply \@_, \@exp, 'Should call yield(' . join(', ', @exp) . ')';
 } );
 
+my $poe_name = 'whatever2';
+@spawn = (alias => $poe_name);
 my $poe_session = bless {}, 'POE::Session';
 my $bot = App::Circle::Bot->new(
-    host     => 'localhost',
-    channels => ['#perl', '#pgtap'],
-    handlers => [qw(Test Test)],
-    tick_in  => 5,
+    host      => 'localhost',
+    channels  => ['#perl', '#pgtap'],
+    handlers  => [qw(Test Test)],
+    tick_in   => 5,
+    _poe_name => $poe_name,
 );
 
 my @args;
@@ -170,7 +173,6 @@ ok App::Circle::Bot::_stop(@args), 'Stop the bot';
 
 ##############################################################################
 # test _reconnect.
-my $poe_name = $bot->_poe_name;
 @call = ([ $poe_name => 'disconnect'], [ $poe_name => 'shutdown' ]);
 @spawn = ( alias => $poe_name );
 @post = (
@@ -193,7 +195,7 @@ my $poe_name = $bot->_poe_name;
 );
 @delay = ( [ reconnect => $bot->reconnect_in ], [ _get_time => 60 ] );
 
-is $bot->irc_client, undef, 'irc_client should not be set';
+isa_ok $bot->irc_client, 'POE::Component::IRC::State', 'irc_client';
 ok App::Circle::Bot::_reconnect(@args), 'Reconnect the bot';
 is $bot->irc_client, $irc_client, 'Should have set irc_client';
 

@@ -4,6 +4,8 @@ SET client_min_messages = warning;
 
 BEGIN;
 
+CREATE EXTENSION CITEXT;
+
 CREATE TYPE IRC_COMMAND AS ENUM (
     'admin',
     'away',

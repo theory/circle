@@ -1,6 +1,14 @@
 This file documents the revision history for Perl extension App::Circle.
 
 0.04
+     - Updated for Perl 5.14.
+     - Now require PostgreSQL 9.1 or higher for the CITEXT extension.
+     - Removed Catalyst. Have yet to write a Web UI, and it probably won't be
+       catalyst when it finally happens.
+     - Fixed handling of socket errors, which were ignored thanks to a
+       mis-spelling.
+     - Added a warning for unhandled events (which would have helped me find
+       the unhandled socket error earlier!).
 
 0.03  2010-06-22T03:44:11
       - Updated use of DBIx::Connection to to its new name: DBIx::Connector.

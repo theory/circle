@@ -11,9 +11,7 @@ Module::Build::DB->new(
     replace_config     => 'conf/dev.yml',
     db_client          => 'psql',
     test_env           => {
-        PGOPTIONS       => '--search_path=tap,public',
-        CATALYST_DEBUG  => 0,
-        CATALYST_CONFIG => 'conf/test.yml',
+        PGOPTIONS => '--search_path=tap,public',
     },
     configure_requires => {
         'Module::Build::DB' => '0.10',
@@ -27,13 +25,6 @@ Module::Build::DB->new(
     },
     requires           => {
         'aliased'                           => '0.30',
-        'Catalyst::Action::RenderView'      => '0.11',
-        'Catalyst::Devel'                   => '1.2',
-        'Catalyst::Plugin::ConfigLoader'    => '0.27',
-        'Catalyst::Plugin::StackTrace'      => '0.10',
-        'Catalyst::Plugin::Static::Simple'  => '0.22',
-        'Catalyst::Plugin::Unicode'         => '0.91',
-        'Catalyst::Runtime'                 => '5.80011',
         'Class::XSAccessor'                 => '1.03',
         'DBD::Pg'                           => '2.15.1',
         'DBI'                               => '1.608',

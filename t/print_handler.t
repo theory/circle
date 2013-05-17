@@ -42,6 +42,9 @@ can_ok $CLASS, qw(
     on_notice
 );
 
+# Silence warning.
+POE::Kernel->run;
+
 my $bot = App::Circle::Bot->new(host => 'localhost');
 my $bmock = Test::MockModule->new('App::Circle::Bot');
 my $is_op;

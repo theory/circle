@@ -165,8 +165,8 @@ Password to use when connecting to the server. Required by some IRC servers.
   use_ssl => 1,
 
 Boolean to indicate whether or not to connect to the server via SSL. If true,
-L<POE::Component::SSLify|POE::Component::SSLify> will need to be installed on
-the system. Defaults to false.
+L<POE::Component::SSLify> will need to be installed on the system. Defaults to
+false.
 
 =item C<join>
 
@@ -272,13 +272,17 @@ sub new {
         $self->channels( ref $join ? $join : [$join]);
     }
 
-    $self->_poe_name( 'wanna' . int rand 100000 ) unless $self->_poe_name;
-    $self->_poe_alias( 'pony' . int rand 100000 ) unless $self->_poe_alias;
-    $self->username( $self->nickname )            unless $self->username;
-    $self->real_name( $self->nickname . ' bot' )  unless $self->real_name;
-    $self->ignore_nicks([])                       unless $self->ignore_nicks;
-    $self->alt_nicks([])                          unless $self->alt_nicks;
-    $self->handlers(['Print'])                    unless $self->handlers;
+    my $nick = $self->nickname;
+    $self->username(   $nick )                   unless $self->username;
+    $self->real_name(  $nick . ' bot' )          unless $self->real_name;
+    $self->_poe_name(  $nick . int rand 100000 ) unless $self->_poe_name;
+    $self->_poe_alias( $nick . int rand 100000 ) unless $self->_poe_alias;
+    $self->ignore_nicks([])                      unless $self->ignore_nicks;
+    $self->alt_nicks([])                         unless $self->alt_nicks;
+    $self->handlers(['Print'])                   unless $self->handlers;
+    $self->irc_client(
+        POE::Component::IRC::State->spawn( alias => $self->_poe_name )
+    );
 
     for my $handler (@{ $self->handlers }) {
         $handler = __PACKAGE__ . "::Handler::$handler" unless $handler =~ /::/;
@@ -311,6 +315,7 @@ sub run {
                 # POE stuff.
                 _start           => '_start',
                 _stop            => '_stop',
+                _default         => '_unhandled',
 
                 # Server interactions.
                 irc_001          => '_irc_001',
@@ -318,7 +323,7 @@ sub run {
                 reconnect        => '_reconnect',
                 irc_disconnected => '_irc_disconnected',
                 irc_error        => '_irc_error',
-                irc_socketerror  => '_irc_error',
+                irc_socketerr    => '_irc_error',
                 irc_391          => '_irc_391',
                 _get_time        => '_get_time',
                 tick             => '_tick',
@@ -584,6 +589,13 @@ sub _trim($) {
 }
 
 # Not passed to handlers.
+sub _unhandled {
+    my ($event, $args) = @_[ARG0, ARG1];
+    my $id = $_[SESSION]->ID;
+    warn "Session $id caught unhandled event $event with (@$args)\n";
+}
+
+# Not passed to handlers.
 sub _start {
     my ( $self, $kernel, $session ) = @_[ OBJECT, KERNEL, SESSION ];
     $self->kernel( $kernel );
@@ -612,9 +624,6 @@ sub _reconnect {
     my $poe_name = $self->_poe_name;
     $kernel->call( $poe_name => 'disconnect' );
     $kernel->call( $poe_name => 'shutdown' );
-    $self->irc_client(
-        POE::Component::IRC::State->spawn( alias => $poe_name )
-    );
     $kernel->post( $poe_name => 'register', 'all' );
 
     $kernel->post($poe_name, connect => {

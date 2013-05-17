@@ -56,6 +56,9 @@ can_ok $CLASS, qw(
     yield
 );
 
+# Silence warning.
+POE::Kernel->run;
+
 ##############################################################################
 ok my $bot = $CLASS->new, 'Instantiate plain bot';
 isa_ok $bot, $CLASS;
@@ -137,6 +140,7 @@ $sess->mock(create => sub {
             # POE stuff.
             _start           => '_start',
             _stop            => '_stop',
+            _default         => '_unhandled',
 
             # Server interactions.
             irc_001          => '_irc_001',
@@ -144,7 +148,7 @@ $sess->mock(create => sub {
             reconnect        => '_reconnect',
             irc_disconnected => '_irc_disconnected',
             irc_error        => '_irc_error',
-            irc_socketerror  => '_irc_error',
+            irc_socketerr    => '_irc_error',
             irc_391          => '_irc_391',
             _get_time        => '_get_time',
             tick             => '_tick',
