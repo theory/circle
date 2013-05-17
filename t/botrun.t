@@ -139,14 +139,15 @@ $irc->mock( yield => sub {
     is_deeply \@_, \@exp, 'Should call yield(' . join(', ', @exp) . ')';
 } );
 
-my $poe_name = 'circlebot bot';
+my $poe_name = 'whatever2';
 @spawn = (alias => $poe_name);
 my $poe_session = bless {}, 'POE::Session';
 my $bot = App::Circle::Bot->new(
-    host     => 'localhost',
-    channels => ['#perl', '#pgtap'],
-    handlers => [qw(Test Test)],
-    tick_in  => 5,
+    host      => 'localhost',
+    channels  => ['#perl', '#pgtap'],
+    handlers  => [qw(Test Test)],
+    tick_in   => 5,
+    _poe_name => $poe_name,
 );
 
 my @args;
