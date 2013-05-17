@@ -1,18 +1,18 @@
 This file documents the revision history for Perl extension App::Circle.
 
 0.04
-     - Updated for Perl 5.14.
-     - Now require PostgreSQL 9.1 or higher for the CITEXT extension.
-     - Removed Catalyst. Have yet to write a Web UI, and it probably won't be
-       catalyst when it finally happens.
-     - Fixed handling of socket errors, which were ignored thanks to a
-       mis-spelling.
-     - Added a warning for unhandled events (which would have helped me find
-       the unhandled socket error earlier!).
-     - Added a `HUP` signal handler. When the bot is `HUP`ed, it will re-read
-       the configuration file and `part` and `join` channels as appropriate.
-       This makes it easy to change the channels circle is on without
-       restarting.
+      - Updated for Perl 5.14.
+      - Now require PostgreSQL 9.1 or higher for the CITEXT extension.
+      - Removed Catalyst. Have yet to write a Web UI, and it probably won't be
+        catalyst when it finally happens.
+      - Fixed handling of socket errors, which were ignored thanks to a
+        mis-spelling.
+      - Added a warning for unhandled events (which would have helped me find
+        the unhandled socket error earlier!).
+      - Added a `HUP` signal handler. When the bot is `HUP`ed, it will
+        re-read the configuration file and `part` and `join` channels as
+        appropriate. This makes it easy to change the channels circle is on
+        without restarting.
 
 0.03  2010-06-22T03:44:11
       - Updated use of DBIx::Connection to to its new name: DBIx::Connector.
