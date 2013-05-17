@@ -56,6 +56,9 @@ can_ok $CLASS, qw(
     yield
 );
 
+# Silence warning.
+POE::Kernel->run;
+
 ##############################################################################
 ok my $bot = $CLASS->new, 'Instantiate plain bot';
 isa_ok $bot, $CLASS;
