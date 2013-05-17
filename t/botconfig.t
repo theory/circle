@@ -118,6 +118,7 @@ DEFAULTS: {
         %defaults,
         join => '#postgresql',
         config => $loaded,
+        config_file => $file,
     }, 'Should have basic config';
 }
 
@@ -139,6 +140,7 @@ CONFIG: {
         ssl      => 1,
         verbose  => 0,
         config   => $loaded,
+        config_file => $file,
     }, 'Should have basic config';
 }
 
@@ -154,5 +156,6 @@ MULTIPLES: {
         alt_nicks => [qw(fred lucy alice dezi)],
         verbose   => 2,
         config    => $loaded,
+        config_file => $file,
     }, 'Should have proper multiples config';
 }

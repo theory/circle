@@ -142,6 +142,9 @@ $sess->mock(create => sub {
             _stop            => '_stop',
             _default         => '_unhandled',
 
+            # Process signals.
+            sig_hup          => 'sig_hup',
+
             # Server interactions.
             irc_001          => '_irc_001',
             irc_ping         => '_irc_ping',

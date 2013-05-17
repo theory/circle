@@ -9,6 +9,10 @@ This file documents the revision history for Perl extension App::Circle.
        mis-spelling.
      - Added a warning for unhandled events (which would have helped me find
        the unhandled socket error earlier!).
+     - Added a `HUP` signal handler. When the bot is `HUP`ed, it will re-read
+       the configuration file and `part` and `join` channels as appropriate.
+       This makes it easy to change the channels circle is on without
+       restarting.
 
 0.03  2010-06-22T03:44:11
       - Updated use of DBIx::Connection to to its new name: DBIx::Connector.
