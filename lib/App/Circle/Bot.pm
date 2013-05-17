@@ -322,7 +322,7 @@ sub run {
                 reconnect        => '_reconnect',
                 irc_disconnected => '_irc_disconnected',
                 irc_error        => '_irc_error',
-                irc_socketerror  => '_irc_error',
+                irc_socketerr    => '_irc_error',
                 irc_391          => '_irc_391',
                 _get_time        => '_get_time',
                 tick             => '_tick',
