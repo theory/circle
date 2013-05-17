@@ -535,8 +535,8 @@ sub _config {
         '-message' => 'Missing required --config option'
     );
 
-    require YAML::Syck;
-    my $config = YAML::Syck::LoadFile($file);
+    require YAML::XS;
+    my $config = YAML::XS::LoadFile($file);
 
     # Take care of the Bot configuration.
     my $irc = delete $config->{irc} or $self->_pod2usage(
@@ -622,8 +622,8 @@ sub sig_hup {
 
     # Load configuration.
     my $config = eval {
-        require YAML::Syck;
-        YAML::Syck::LoadFile($file);
+        require YAML::XS;
+        YAML::XS::LoadFile($file);
     };
 
     if (my $err = $@) {

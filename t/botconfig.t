@@ -9,7 +9,7 @@ use Test::More tests => 18;
 #use Test::More 'no_plan';
 use Test::MockModule;
 use File::Spec::Functions 'catfile';
-use YAML::Syck;
+use YAML::XS qw(LoadFile);
 
 my $CLASS;
 
