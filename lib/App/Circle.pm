@@ -5,7 +5,7 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 =begin comment
 

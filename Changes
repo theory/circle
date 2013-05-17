@@ -1,5 +1,7 @@
 This file documents the revision history for Perl extension App::Circle.
 
+0.05
+
 0.04  2013-05-17T22:10:05Z
       - Updated for Perl 5.14.
       - Now require PostgreSQL 9.1 or higher for the CITEXT extension.
