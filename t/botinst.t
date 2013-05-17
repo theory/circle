@@ -140,6 +140,7 @@ $sess->mock(create => sub {
             # POE stuff.
             _start           => '_start',
             _stop            => '_stop',
+            _default         => '_unhandled',
 
             # Server interactions.
             irc_001          => '_irc_001',

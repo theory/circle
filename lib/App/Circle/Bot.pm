@@ -315,6 +315,7 @@ sub run {
                 # POE stuff.
                 _start           => '_start',
                 _stop            => '_stop',
+                _default         => '_unhandled',
 
                 # Server interactions.
                 irc_001          => '_irc_001',
@@ -585,6 +586,13 @@ sub _trim($) {
     $_[0] =~ s/^\s+//;
     $_[0] =~ s/\s+$//;
     $_[0];
+}
+
+# Not passed to handlers.
+sub _unhandled {
+    my ($event, $args) = @_[ARG0, ARG1];
+    my $id = $_[SESSION]->ID;
+    warn "Session $id caught unhandled event $event with (@$args)\n";
 }
 
 # Not passed to handlers.
