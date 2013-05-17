@@ -5,9 +5,10 @@ use warnings;
 use feature ':5.10';
 use utf8;
 
-use Test::More tests => 164;
+use Test::More tests => 177;
 #use Test::More 'no_plan';
 use Test::MockModule;
+use File::Spec::Functions 'catfile';
 use POE;
 
 my $CLASS;
@@ -139,6 +140,13 @@ $irc->mock( yield => sub {
     is_deeply \@_, \@exp, 'Should call yield(' . join(', ', @exp) . ')';
 } );
 
+my @sig;
+$kern->mock(sig => sub {
+    shift;
+    my @exp = @{ shift @sig };
+    is_deeply \@_, \@exp, 'Should call sig(' . join(', ', @exp) . ')';
+});
+
 my $poe_name = 'whatever2';
 @spawn = (alias => $poe_name);
 my $poe_session = bless {}, 'POE::Session';
@@ -148,6 +156,7 @@ my $bot = App::Circle::Bot->new(
     handlers  => [qw(Test Test)],
     tick_in   => 5,
     _poe_name => $poe_name,
+    config_file => catfile qw(t basic.yml)
 );
 
 my @args;
@@ -162,6 +171,7 @@ is $bot->kernel,  undef, 'The kernel accessor should not be set';
 is $bot->session, undef, 'The session accessor should not be set';
 
 @delay = ( [ reconnect => 1 ], [ tick => 30 ] );
+@sig = ( [ HUP => 'sig_hup'] );
 ok App::Circle::Bot::_start(@args), 'Start the bot';
 is $bot->kernel, $poe_kernel, 'The kernel accessor should have been set';
 is $bot->session, $poe_session, 'The session accessor should have been set';
@@ -169,6 +179,7 @@ is $bot->session, $poe_session, 'The session accessor should have been set';
 ##############################################################################
 # Test _stop.
 @post = ( [ $bot->_poe_name, 'quit', $bot->_encode( $bot->quit_message) ] );
+@sig = (['HUP']);
 ok App::Circle::Bot::_stop(@args), 'Stop the bot';
 
 ##############################################################################
@@ -704,3 +715,29 @@ is_deeply [ $bot->_encode('David “Theory” Wheeler', 'foo') ], [ $res, 'foo' 
 # Test yield.
 @yield = ( [ nick => Encode::encode($bot->encoding, 'bjørn', Encode::FB_PERLQQ)] );
 ok $bot->yield( nick => 'bjørn' ), 'Call yield()';
+
+##############################################################################
+# Test sig_hup.
+is_deeply $bot->channels, ['#parrot'], 'Channels should start with just parrot';
+@post = (
+    [$poe_name, part => '#parrot'],
+    [$poe_name, join => '#postgresql'],
+);
+App::Circle::Bot::sig_hup(@args);
+pass( 'Should part and join on a sig_hup event' );
+is_deeply $bot->channels, ['#postgresql'], 'Channels should be updated';
+
+App::Circle::Bot::sig_hup(@args);
+pass( 'Nothing should change in a second sig_hup for the same config' );
+is_deeply $bot->channels, ['#postgresql'], 'Channels should be unchanged';
+
+# Change the config file.
+$bot->config_file(catfile qw(t multiples.yml));
+@post = (
+    [$poe_name, join => '#perl'],
+    [$poe_name, join => '#dbi'],
+);
+App::Circle::Bot::sig_hup(@args);
+pass( 'Two channels should be joined for sig_hup with new config');
+is_deeply $bot->channels, [qw(#perl #postgresql #dbi)],
+    'Should now have the correct three channels';

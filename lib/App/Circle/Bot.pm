@@ -37,6 +37,7 @@ use Class::XSAccessor accessors => {
         tick_in
         irc_client
         config
+        config_file
         _poe_name
         _poe_alias
         _buffer
@@ -317,6 +318,9 @@ sub run {
                 _stop            => '_stop',
                 _default         => '_unhandled',
 
+                # Process signals.
+                sig_hup          => 'sig_hup',
+
                 # Server interactions.
                 irc_001          => '_irc_001',
                 irc_ping         => '_irc_ping',
@@ -517,6 +521,10 @@ sub config_for {
 
 
 
+=head3 C<config_file>
+
+
+
 =cut
 
 sub _config {
@@ -536,7 +544,12 @@ sub _config {
     );
 
     # Return the configuration.
-    return ( %{ $irc }, config => $config, verbose => $opts->{verbose} || 0 );
+    return (
+        %{$irc},
+        config      => $config,
+        config_file => $file,
+        verbose     => $opts->{verbose} || 0
+    );
 }
 
 sub _getopt {
@@ -588,6 +601,57 @@ sub _trim($) {
     $_[0];
 }
 
+=head3 C<sig_hup>
+
+This event is called in response to HUP signals from the OS. It will re-read
+the configuration file and join or part channels depending on how they have
+changed. This makes it easy to update the channel configuration without
+restarting circle: Just edit the configuration file's C<join> section and HUP
+circle.
+
+=cut
+
+# Not passed to handlers.
+sub sig_hup {
+    my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
+    my $name = $self->_poe_name;
+    my $file = $self->config_file or do {
+        warn "Missing required --config option\n";
+        return $kernel->sig_handled;
+    };
+
+    # Load configuration.
+    my $config = eval {
+        require YAML::Syck;
+        YAML::Syck::LoadFile($file);
+    };
+
+    if (my $err = $@) {
+        warn "Unable to reload configuration file: $@\n";
+        return $kernel->sig_handled;
+    }
+
+    # Get the updated list of channels.
+    my $chans = $config->{irc}{join} || [];
+    $chans = [$chans] unless ref $chans;
+
+    # Map the current channels.
+    my %curr_chans = map { $_ => 1 } @{ $self->channels };
+
+    # Determine the channels to be joined.
+    my @to_join = grep { ! delete $curr_chans{$_} } @{ $chans };
+
+    # Leave old channels.
+    $kernel->post( $name, part => $self->_encode( $_ ) ) for keys %curr_chans;
+
+    # Join new channels.
+    $kernel->post( $name, join => $self->_encode($_) ) for @to_join;
+
+    # Update the channel list and acknowledge the signal.
+    $self->channels($chans);
+    $kernel->sig_handled;
+}
+
 # Not passed to handlers.
 sub _unhandled {
     my ($event, $args) = @_[ARG0, ARG1];
@@ -604,16 +668,21 @@ sub _start {
     # Make an alias for our session, to keep it from getting GC'ed.
     $kernel->alias_set( $self->_poe_alias );
 
+    # Set up a HUP signal handler.
+    $kernel->sig( HUP => 'sig_hup');
+
     $kernel->delay( reconnect => 1  );
     $kernel->delay( tick      => 30 );
     return $self;
 }
+
 
 # Not passed to handlers.
 sub _stop {
     my ( $self, $kernel ) = @_[ OBJECT, KERNEL ];
     $kernel->post( $self->_poe_name, 'quit', $self->_encode($self->quit_message) );
     $kernel->alias_remove( $self->_poe_alias );
+    $kernel->sig('HUP'); # Disable HUP handler.
     return $self;
 }
 
