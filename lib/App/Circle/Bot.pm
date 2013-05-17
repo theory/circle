@@ -272,13 +272,16 @@ sub new {
         $self->channels( ref $join ? $join : [$join]);
     }
 
-    $self->_poe_name( 'wanna' . int rand 100000 ) unless $self->_poe_name;
-    $self->_poe_alias( 'pony' . int rand 100000 ) unless $self->_poe_alias;
     $self->username( $self->nickname )            unless $self->username;
     $self->real_name( $self->nickname . ' bot' )  unless $self->real_name;
+    $self->_poe_name( $self->real_name )          unless $self->_poe_name;
+    $self->_poe_alias( $self->nickname . $$ )     unless $self->_poe_alias;
     $self->ignore_nicks([])                       unless $self->ignore_nicks;
     $self->alt_nicks([])                          unless $self->alt_nicks;
     $self->handlers(['Print'])                    unless $self->handlers;
+    $self->irc_client(
+        POE::Component::IRC::State->spawn( alias => $self->_poe_name )
+    );
 
     for my $handler (@{ $self->handlers }) {
         $handler = __PACKAGE__ . "::Handler::$handler" unless $handler =~ /::/;
@@ -612,9 +615,6 @@ sub _reconnect {
     my $poe_name = $self->_poe_name;
     $kernel->call( $poe_name => 'disconnect' );
     $kernel->call( $poe_name => 'shutdown' );
-    $self->irc_client(
-        POE::Component::IRC::State->spawn( alias => $poe_name )
-    );
     $kernel->post( $poe_name => 'register', 'all' );
 
     $kernel->post($poe_name, connect => {
