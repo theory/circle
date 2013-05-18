@@ -225,10 +225,11 @@ ok !$h->on_names({ names => {
     '#pgtap' => { %{ $pgtap } },
     '#perl'  => { %{ $perl  } },
 } }), 'on_names should return false';
-is output,
-    "$time Circle: #pgtap: Total of 3 [1 ops, 0 halfops, 1 voices, 2 normal]\n"
-  . "$time Circle: #perl: Total of 5 [2 ops, 1 halfops, 2 voices, 2 normal]\n",
-    'on_names should output mesasge';
+my $output = [sort split /\n/ => output];
+is_deeply $output, [
+    "$time Circle: #perl: Total of 5 [2 ops, 1 halfops, 2 voices, 2 normal]",
+    "$time Circle: #pgtap: Total of 3 [1 ops, 0 halfops, 1 voices, 2 normal]",
+], 'on_names should output mesasge';
 
 # on_chan_mode
 delete $msg{body};

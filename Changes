@@ -3,6 +3,7 @@ This file documents the revision history for Perl extension App::Circle.
 0.05
       - Added an example [upstart](http://upstart.ubuntu.com) job
         configuration file, `eg/circle.conf`, thanks to Jeff Frost.
+      - Fixed test failure on Perl 5.18.
 
 0.04  2013-05-17T22:10:05Z
       - Updated for Perl 5.14.
