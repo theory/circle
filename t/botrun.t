@@ -333,9 +333,12 @@ my @channels = ('#perl', '#parrot');
 $args[ARG2] = { map { $_ => 1 } @channels };
 @delay = ( [reconnect => 30 ]);
 ok App::Circle::Bot::_irc_disconnected(@args), 'Send a disconnected event';
-is_deeply $h1->clear, { disconnect => {
+
+my $got = $h1->clear;
+$got->{disconnect}{channels} = [sort @{ $got->{disconnect}{channels} }];
+is_deeply $got, { disconnect => {
     nick     => 'circlebot',
-    channels => \@channels,
+    channels => [sort @channels],
 }}, 'Should have the proper disconnect handler args';
 
 ##############################################################################
@@ -345,10 +348,13 @@ $args[ARG1] = { @nick_info };
 $args[ARG2] = { map { $_ => 1 } @channels };
 @delay      = ( [reconnect => 30 ]);
 ok App::Circle::Bot::_irc_error(@args), 'Send an error event';
-is_deeply $h1->clear, { error => {
+
+$got = $h1->clear;
+$got->{error}{channels} = [sort @{ $got->{error}{channels} }];
+is_deeply $got, { error => {
     nick     => 'circlebot',
     body     => 'WTF?',
-    channels => \@channels,
+    channels => [sort @channels],
 }}, 'Should have the proper disconnect handler args';
 
 ##############################################################################
