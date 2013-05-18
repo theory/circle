@@ -29,3 +29,4 @@ hostmask
 Freenode
 IP
 IRCop
+HUP
